@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "jax-tqdm"
+version = "0.1.0"
+description = "Tqdm progress bar for JAX scans and loops"
+authors = ["jeremiecoullon", "zombie-einstein"]
+readme = "README.md"
+packages = [{include = "jax_tqdm"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+tqdm = "^4.64.1"
+jax = ">=0.3.5"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^2.21.0"
+taskipy = "^1.10.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.taskipy.tasks]
+lint = { cmd = "pre-commit run --all-files", help="Code format checks"}

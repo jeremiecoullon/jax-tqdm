@@ -1,0 +1,32 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: check-docstring-first
+    -   id: check-merge-conflict
+    -   id: check-toml
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+-   repo: https://github.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
+    -   id: flake8
+        args:
+          - "--max-line-length=88"
+          - "--max-complexity=18"
+          - "--select=B,C,E,F,W,T4,B9"
+          - "--ignore=W503"
+          - "--per-file-ignores=__init__.py:F401"
+-   repo: https://github.com/pycqa/isort
+    rev: 5.11.4
+    hooks:
+    -   id: isort
+        args:
+          - "--multi-line=3"
+          - "--use-parentheses"
+          - "--trailing-comma"
+-   repo: https://github.com/psf/black
+    rev: "refs/tags/22.3.0:refs/tags/22.3.0"
+    hooks:
+    -   id: black
