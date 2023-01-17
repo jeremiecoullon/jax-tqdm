@@ -21,58 +21,8 @@ def progress_bar_scan(n: int, message: typing.Optional[str] = None) -> typing.Ca
     typing.Callable:
         Progress bar wrapping function.
     """
-    if message is None:
-        message = f"Running for {n:,} iterations"
-    tqdm_bars = {}
 
-    if n > 20:
-        print_rate = int(n / 20)
-    else:
-        print_rate = 1
-    remainder = n % print_rate
-
-    def _define_tqdm(arg, transform):
-        tqdm_bars[0] = tqdm(range(n))
-        tqdm_bars[0].set_description(message, refresh=False)
-
-    def _update_tqdm(arg, transform):
-        tqdm_bars[0].update(arg)
-
-    def _update_progress_bar(iter_num):
-        """Updates tqdm progress bar of a JAX scan or loop"""
-        _ = jax.lax.cond(
-            iter_num == 0,
-            lambda _: host_callback.id_tap(_define_tqdm, None, result=iter_num),
-            lambda _: iter_num,
-            operand=None,
-        )
-
-        _ = jax.lax.cond(
-            # update tqdm every multiple of `print_rate` except at the end
-            (iter_num % print_rate == 0) & (iter_num != n - remainder),
-            lambda _: host_callback.id_tap(_update_tqdm, print_rate, result=iter_num),
-            lambda _: iter_num,
-            operand=None,
-        )
-
-        _ = jax.lax.cond(
-            # update tqdm by `remainder`
-            iter_num == n - remainder,
-            lambda _: host_callback.id_tap(_update_tqdm, remainder, result=iter_num),
-            lambda _: iter_num,
-            operand=None,
-        )
-
-    def _close_tqdm(arg, transform):
-        tqdm_bars[0].close()
-
-    def close_tqdm(result, iter_num):
-        return jax.lax.cond(
-            iter_num == n - 1,
-            lambda _: host_callback.id_tap(_close_tqdm, None, result=result),
-            lambda _: result,
-            operand=None,
-        )
+    _update_progress_bar, close_tqdm = build_tqdm(n, message)
 
     def _progress_bar_scan(func):
         """Decorator that adds a progress bar to `body_fun` used in `jax.lax.scan`.
@@ -113,6 +63,23 @@ def progress_bar_fori_loop(
     typing.Callable:
         Progress bar wrapping function.
     """
+
+    _update_progress_bar, close_tqdm = build_tqdm(n, message)
+
+    def _progress_bar_fori_loop(func):
+        """Decorator that adds a progress bar to `body_fun` used in `jax.lax.fori_loop`."""
+
+        def wrapper_progress_bar(i, val):
+            _update_progress_bar(i)
+            result = func(i, val)
+            return close_tqdm(result, i)
+
+        return wrapper_progress_bar
+
+    return _progress_bar_fori_loop
+
+
+def build_tqdm(n, message):
     if message is None:
         message = f"Running for {n:,} iterations"
     tqdm_bars = {}
@@ -166,14 +133,4 @@ def progress_bar_fori_loop(
             operand=None,
         )
 
-    def _progress_bar_fori_loop(func):
-        """Decorator that adds a progress bar to `body_fun` used in `jax.lax.fori_loop`."""
-
-        def wrapper_progress_bar(i, val):
-            _update_progress_bar(i)
-            result = func(i, val)
-            return close_tqdm(result, i)
-
-        return wrapper_progress_bar
-
-    return _progress_bar_fori_loop
+    return _update_progress_bar, close_tqdm
