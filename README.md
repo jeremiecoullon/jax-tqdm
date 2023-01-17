@@ -1,6 +1,6 @@
 # JAX-tqdm
 
-Add a progress bar to your JAX scans and loops.
+Add a tqdm progress bar to your JAX scans and loops.
 
 The code is explained in this [blog post](https://www.jeremiecoullon.com/2021/01/29/jax_progress_bar/).
 
