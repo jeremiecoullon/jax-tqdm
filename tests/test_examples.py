@@ -22,7 +22,7 @@ def test_readme_fori_loop_example():
     n = 10_000
 
     @progress_bar_fori_loop(n)
-    def body(i, val):
+    def step(i, val): 
         return val + 1
 
-    last_number = lax.fori_loop(0, n, body, 0)
+    last_number = lax.fori_loop(0, n, step, 0)
