@@ -100,12 +100,14 @@ def progress_bar_fori_loop(
 ) -> typing.Callable:
     """
     Progress bar for a JAX fori_loop
+
     Parameters
     ----------
     n : int
         Number of iterations.
     message : str
         Optional string to prepend to tqdm progress bar.
+
     Returns
     -------
     typing.Callable:
