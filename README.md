@@ -32,7 +32,7 @@ from jax import lax
 n = 10_000
 
 @loop_tqdm(n)
-def step(i, val): 
+def step(i, val):
     return val + 1
 
 last_number = lax.fori_loop(0, n, step, 0)
