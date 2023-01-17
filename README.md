@@ -9,13 +9,13 @@ The code is explained in this [blog post](https://www.jeremiecoullon.com/2021/01
 ### in `jax.lax.scan`
 
 ```python
-from jax_tqdm import progress_bar_scan
+from jax_tqdm import scan_tqdm
 from jax import lax
 import jax.numpy as jnp
 
 n = 10_000
 
-@progress_bar_scan(n)
+@scan_tqdm(n)
 def step(carry, x):
     return carry + 1, carry + 1
 
@@ -26,12 +26,12 @@ last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ### in `jax.lax.fori_loop`
 
 ```python
-from jax_tqdm import progress_bar_fori_loop
+from jax_tqdm import loop_tqdm
 from jax import lax
 
 n = 10_000
 
-@progress_bar_fori_loop(n)
+@loop_tqdm(n)
 def step(i, val): 
     return val + 1
 

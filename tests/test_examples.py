@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 from jax import lax
 
-from jax_tqdm import progress_bar_scan, progress_bar_fori_loop
+from jax_tqdm import scan_tqdm, loop_tqdm
 
 
 def test_readme_scan_example():
@@ -9,7 +9,7 @@ def test_readme_scan_example():
 
     n = 10_000
 
-    @progress_bar_scan(n)
+    @scan_tqdm(n)
     def step(carry, x):
         return carry + 1, carry + 1
 
@@ -17,11 +17,11 @@ def test_readme_scan_example():
 
 
 def test_readme_fori_loop_example():
-    """Just test that README fori_loop example runs correctly"""
+    """Just test that README loop example runs correctly"""
 
     n = 10_000
 
-    @progress_bar_fori_loop(n)
+    @loop_tqdm(n)
     def step(i, val): 
         return val + 1
 
