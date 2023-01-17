@@ -65,7 +65,10 @@ def loop_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
     _update_progress_bar, close_tqdm = build_tqdm(n, message)
 
     def _loop_tqdm(func):
-        """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.fori_loop`."""
+        """
+        Decorator that adds a tqdm progress bar to `body_fun`
+        used in `jax.lax.fori_loop`.
+        """
 
         def wrapper_progress_bar(i, val):
             _update_progress_bar(i)
