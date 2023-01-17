@@ -5,6 +5,9 @@ description = "Tqdm progress bar for JAX scans and loops"
 authors = ["jeremiecoullon", "zombie-einstein"]
 readme = "README.md"
 packages = [{include = "jax_tqdm"}]
+homepage = "https://github.com/jeremiecoullon/jax-tqdm"
+repository = "https://github.com/jeremiecoullon/jax-tqdm"
+keywords = ["jax", "tqdm"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
