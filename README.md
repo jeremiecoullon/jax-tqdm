@@ -35,5 +35,5 @@ n = 10_000
 def body(i, val): 
     return val + 1
 
-last_number = lax.fori_loop(0, n, body, 0.)
+last_number = lax.fori_loop(0, n, body, 0)
 ```
