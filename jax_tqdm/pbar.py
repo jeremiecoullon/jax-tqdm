@@ -39,8 +39,8 @@ def progress_bar_scan(n: int, message: typing.Optional[str] = None) -> typing.Ca
         tqdm_bars[0].update(arg)
 
     def _update_progress_bar(iter_num):
-        "Updates tqdm progress bar of a JAX scan or loop"
-        _ = jax.jax.lax.cond(
+        """Updates tqdm progress bar of a JAX scan or loop"""
+        _ = jax.lax.cond(
             iter_num == 0,
             lambda _: host_callback.id_tap(_define_tqdm, None, result=iter_num),
             lambda _: iter_num,
@@ -76,8 +76,8 @@ def progress_bar_scan(n: int, message: typing.Optional[str] = None) -> typing.Ca
 
     def _progress_bar_scan(func):
         """Decorator that adds a progress bar to `body_fun` used in `jax.lax.scan`.
-        Note that `body_fun` must either be looping over `np.arange(n)`,
-        or be looping over a tuple who's first element is `np.arange(n)`
+        Note that `body_fun` must either be looping over `jnp.arange(n)`,
+        or be looping over a tuple who's first element is `jnp.arange(n)`
         This means that `iter_num` is the current iteration number
         """
 
