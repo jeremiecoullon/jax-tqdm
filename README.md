@@ -4,6 +4,14 @@ Add a tqdm progress bar to your JAX scans and loops.
 
 The code is explained in this [blog post](https://www.jeremiecoullon.com/2021/01/29/jax_progress_bar/).
 
+## Installation
+
+Install with pip:
+
+```bash
+pip install jax-tqdm
+```
+
 ## Example usage
 
 ### in `jax.lax.scan`
@@ -21,7 +29,6 @@ def step(carry, x):
 
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
-
 
 ### in `jax.lax.fori_loop`
 
