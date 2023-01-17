@@ -5,9 +5,9 @@ from jax.experimental import host_callback
 from tqdm.auto import tqdm
 
 
-def progress_bar_scan(n: int, message: typing.Optional[str] = None) -> typing.Callable:
+def scan_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
     """
-    Progress bar for a JAX scan
+    tqdm progress bar for a JAX scan
 
     Parameters
     ----------
@@ -21,6 +21,69 @@ def progress_bar_scan(n: int, message: typing.Optional[str] = None) -> typing.Ca
     typing.Callable:
         Progress bar wrapping function.
     """
+
+    _update_progress_bar, close_tqdm = build_tqdm(n, message)
+
+    def _scan_tqdm(func):
+        """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
+        Note that `body_fun` must either be looping over `jnp.arange(n)`,
+        or be looping over a tuple who's first element is `jnp.arange(n)`
+        This means that `iter_num` is the current iteration number
+        """
+
+        def wrapper_progress_bar(carry, x):
+            if type(x) is tuple:
+                iter_num, *_ = x
+            else:
+                iter_num = x
+            _update_progress_bar(iter_num)
+            result = func(carry, x)
+            return close_tqdm(result, iter_num)
+
+        return wrapper_progress_bar
+
+    return _scan_tqdm
+
+
+def loop_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
+    """
+    tqdm progress bar for a JAX fori_loop
+
+    Parameters
+    ----------
+    n : int
+        Number of iterations.
+    message : str
+        Optional string to prepend to tqdm progress bar.
+
+    Returns
+    -------
+    typing.Callable:
+        Progress bar wrapping function.
+    """
+
+    _update_progress_bar, close_tqdm = build_tqdm(n, message)
+
+    def _loop_tqdm(func):
+        """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.fori_loop`."""
+
+        def wrapper_progress_bar(i, val):
+            _update_progress_bar(i)
+            result = func(i, val)
+            return close_tqdm(result, i)
+
+        return wrapper_progress_bar
+
+    return _loop_tqdm
+
+
+def build_tqdm(
+    n: int, message: typing.Optional[str] = None
+) -> typing.Tuple[typing.Callable, typing.Callable]:
+    """
+    Build the tqdm progress bar on the host
+    """
+
     if message is None:
         message = f"Running for {n:,} iterations"
     tqdm_bars = {}
@@ -39,8 +102,8 @@ def progress_bar_scan(n: int, message: typing.Optional[str] = None) -> typing.Ca
         tqdm_bars[0].update(arg)
 
     def _update_progress_bar(iter_num):
-        """Updates tqdm progress bar of a JAX scan or loop"""
-        _ = jax.lax.cond(
+        "Updates tqdm from a JAX scan or loop"
+        _ = jax.jax.lax.cond(
             iter_num == 0,
             lambda _: host_callback.id_tap(_define_tqdm, None, result=iter_num),
             lambda _: iter_num,
@@ -74,22 +137,4 @@ def progress_bar_scan(n: int, message: typing.Optional[str] = None) -> typing.Ca
             operand=None,
         )
 
-    def _progress_bar_scan(func):
-        """Decorator that adds a progress bar to `body_fun` used in `jax.lax.scan`.
-        Note that `body_fun` must either be looping over `jnp.arange(n)`,
-        or be looping over a tuple who's first element is `jnp.arange(n)`
-        This means that `iter_num` is the current iteration number
-        """
-
-        def wrapper_progress_bar(carry, x):
-            if type(x) is tuple:
-                iter_num, *_ = x
-            else:
-                iter_num = x
-            _update_progress_bar(iter_num)
-            result = func(carry, x)
-            return close_tqdm(result, iter_num)
-
-        return wrapper_progress_bar
-
-    return _progress_bar_scan
+    return _update_progress_bar, close_tqdm
