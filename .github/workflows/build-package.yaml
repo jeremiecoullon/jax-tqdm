@@ -18,8 +18,9 @@ jobs:
       - run: poetry build
       - run: echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
       - run: ls dist
-      - name: Upload whl
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-whl
-          path: dist/jax_tqdm-${{env.VERSION}}-py3-none-any.whl
+#  TODO: Use upload to test build before release
+#      - name: Upload whl
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: build-whl
+#          path: dist/jax_tqdm-${{env.VERSION}}-py3-none-any.whl
