@@ -1,0 +1,16 @@
+name: code-formatting
+run-name: ${{ github.actor }} code format checks
+on: [pull_request]
+jobs:
+  run-pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: false
+          installer-parallel: true
+      - run: poetry install
+      - run: pre-commit install
+      - run: task lint
