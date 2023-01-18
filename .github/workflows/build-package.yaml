@@ -17,7 +17,6 @@ jobs:
       - run: poetry install
       - run: poetry build
       - run: echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
-      # - run: VERSION=$(poetry version --short)
       - run: ls dist
       - name: Upload whl
         uses: actions/upload-artifact@v3
