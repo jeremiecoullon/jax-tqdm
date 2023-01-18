@@ -16,10 +16,11 @@ jobs:
           installer-parallel: true
       - run: poetry install
       - run: poetry build
-      - run: VERSION=$(poetry version --short)
+      - run: echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
+      # - run: VERSION=$(poetry version --short)
       - run: ls dist
       - name: Upload whl
         uses: actions/upload-artifact@v3
         with:
           name: build-whl
-          path: dist/jax_tqdm-${{VERSION}}-py3-none-any.whl
+          path: dist/jax_tqdm-${{env.VERSION}}-py3-none-any.whl
