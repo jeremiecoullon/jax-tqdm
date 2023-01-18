@@ -2,7 +2,7 @@ name: build-package
 run-name: ${{ github.actor }} build package
 on: [pull_request]
 jobs:
-  build package:
+  build-package:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
