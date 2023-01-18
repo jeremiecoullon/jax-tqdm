@@ -50,3 +50,33 @@ JAX functions are [purely functional](https://jax.readthedocs.io/en/latest/noteb
 Note that as the tqdm progress bar is only updated 20 times during the scan or loop, there is no performance penalty.
 
 The code is explained in more detail in this [blog post](https://www.jeremiecoullon.com/2021/01/29/jax_progress_bar/).
+
+## Developers
+
+Dependencies can be installed with [poetry](https://python-poetry.org/) by running
+
+```bash
+poetry install
+```
+
+### Pre-Commit Hooks
+
+Pre commit hooks can be installed by running
+
+```bash
+pre-commit install
+```
+
+Pre-commit checks can then be run using
+
+```bash
+task lint
+```
+
+### Tests
+
+Tests can be run with
+
+```bash
+task test
+```
