@@ -1,0 +1,26 @@
+name: build-package
+run-name: ${{ github.actor }} build package
+on: [pull_request]
+jobs:
+  build-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: snok/install-poetry@v1
+        with:
+          version: 1.2.2
+          virtualenvs-create: false
+          installer-parallel: true
+      - run: poetry install
+      - run: poetry build
+      - run: echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
+      - run: ls dist
+#  TODO: Use upload to test build before release
+#      - name: Upload whl
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: build-whl
+#          path: dist/jax_tqdm-${{env.VERSION}}-py3-none-any.whl

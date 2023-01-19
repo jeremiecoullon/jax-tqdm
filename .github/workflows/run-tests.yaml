@@ -1,0 +1,19 @@
+name: run-tests
+run-name: ${{ github.actor }} run tests
+on: [pull_request]
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: snok/install-poetry@v1
+        with:
+          version: 1.2.2
+          virtualenvs-create: false
+          installer-parallel: true
+      - run: poetry install
+      - run: pip install --upgrade "jax[cpu]"
+      - run: pytest -vv
