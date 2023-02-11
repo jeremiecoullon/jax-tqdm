@@ -25,7 +25,7 @@ taskipy = "^1.10.3"
 pytest = "^7.2.1"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.2.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.taskipy.tasks]
