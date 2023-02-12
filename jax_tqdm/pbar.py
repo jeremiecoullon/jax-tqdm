@@ -110,6 +110,14 @@ def build_tqdm(
             print_rate = int(n / 20)
         else:
             print_rate = 1
+    else:
+        if print_rate < 1:
+            raise ValueError(f"Print rate should be > 0 got {print_rate}")
+        elif print_rate > n:
+            raise ValueError(
+                "Print rate should be less than the "
+                f"number of steps {n}, got {print_rate}"
+            )
 
     remainder = n % print_rate
 

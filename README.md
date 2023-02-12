@@ -43,6 +43,29 @@ def step(i, val):
 last_number = lax.fori_loop(0, n, step, 0)
 ```
 
+### Print Rate
+
+By default, the progress bar is updated 20 times over the course of the scan/loop
+(for performance purposes, see [below](#why-jax-tqdm)). This
+update rate can be manually controlled with the `print_rate` keyword argument. For
+example
+
+```python
+from jax_tqdm import scan_tqdm
+from jax import lax
+import jax.numpy as jnp
+
+n = 10_000
+
+@scan_tqdm(n, print_rate=2)
+def step(carry, x):
+    return carry + 1, carry + 1
+
+last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
+```
+
+will update every-other steps.
+
 ## Why JAX-tqdm?
 
 JAX functions are [purely functional](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions), so side effects such as printing progress when running scans and loops are not allowed. However, the [host_callback module](https://jax.readthedocs.io/en/latest/jax.experimental.host_callback.html) has primitives for calling Python functions on the host from JAX code. This can be used to update a Python tqdm progress bar regularly during the computation. JAX-tqdm implements this for JAX scans and loops and is used by simply adding a decorator to the body of your update function.
