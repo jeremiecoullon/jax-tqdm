@@ -48,7 +48,7 @@ last_number = lax.fori_loop(0, n, step, 0)
 By default, the progress bar is updated 20 times over the course of the scan/loop
 (for performance purposes, see [below](#why-jax-tqdm)). This
 update rate can be manually controlled with the `print_rate` keyword argument. For
-example
+example:
 
 ```python
 from jax_tqdm import scan_tqdm
@@ -64,13 +64,20 @@ def step(carry, x):
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
 
-will update every-other steps.
+will update every other step.
 
 ## Why JAX-tqdm?
 
-JAX functions are [purely functional](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions), so side effects such as printing progress when running scans and loops are not allowed. However, the [host_callback module](https://jax.readthedocs.io/en/latest/jax.experimental.host_callback.html) has primitives for calling Python functions on the host from JAX code. This can be used to update a Python tqdm progress bar regularly during the computation. JAX-tqdm implements this for JAX scans and loops and is used by simply adding a decorator to the body of your update function.
+JAX functions are [purely](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions),
+so side effects such as printing progress when running scans and loops are not allowed.
+However, the [host_callback module](https://jax.readthedocs.io/en/latest/jax.experimental.host_callback.html)
+has primitives for calling Python functions on the host from JAX code. This can be used
+to update a Python tqdm progress bar regularly during the computation. JAX-tqdm
+implements this for JAX scans and loops and is used by simply adding a decorator to the
+body of your update function.
 
-Note that as the tqdm progress bar is only updated 20 times during the scan or loop, there is no performance penalty.
+Note that as the tqdm progress bar is only updated 20 times during the scan or loop,
+there is no performance penalty.
 
 The code is explained in more detail in this [blog post](https://www.jeremiecoullon.com/2021/01/29/jax_progress_bar/).
 
