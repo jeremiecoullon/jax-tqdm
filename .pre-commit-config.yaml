@@ -19,7 +19,7 @@ repos:
           - "--ignore=W503"
           - "--per-file-ignores=__init__.py:F401"
 -   repo: https://github.com/pycqa/isort
-    rev: 5.11.4
+    rev: 5.12.0
     hooks:
     -   id: isort
         args:

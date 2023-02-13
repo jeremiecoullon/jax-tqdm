@@ -5,7 +5,11 @@ from jax.experimental import host_callback
 from tqdm.auto import tqdm
 
 
-def scan_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
+def scan_tqdm(
+    n: int,
+    print_rate: typing.Optional[int] = None,
+    message: typing.Optional[str] = None,
+) -> typing.Callable:
     """
     tqdm progress bar for a JAX scan
 
@@ -13,6 +17,9 @@ def scan_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
     ----------
     n : int
         Number of scan steps/iterations.
+    print_rate: int
+        Optional integer rate at which the progress bar will be updated,
+        by default the print rate will 1/20th of the total number of steps.
     message : str
         Optional string to prepend to tqdm progress bar.
 
@@ -22,7 +29,7 @@ def scan_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, message)
+    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, message)
 
     def _scan_tqdm(func):
         """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
@@ -45,7 +52,11 @@ def scan_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
     return _scan_tqdm
 
 
-def loop_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
+def loop_tqdm(
+    n: int,
+    print_rate: typing.Optional[int] = None,
+    message: typing.Optional[str] = None,
+) -> typing.Callable:
     """
     tqdm progress bar for a JAX fori_loop
 
@@ -53,6 +64,9 @@ def loop_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
     ----------
     n : int
         Number of iterations.
+    print_rate: int
+        Optional integer rate at which the progress bar will be updated,
+        by default the print rate will 1/20th of the total number of steps.
     message : str
         Optional string to prepend to tqdm progress bar.
 
@@ -62,7 +76,7 @@ def loop_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, message)
+    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, message)
 
     def _loop_tqdm(func):
         """
@@ -81,7 +95,7 @@ def loop_tqdm(n: int, message: typing.Optional[str] = None) -> typing.Callable:
 
 
 def build_tqdm(
-    n: int, message: typing.Optional[str] = None
+    n: int, print_rate: typing.Optional[int], message: typing.Optional[str] = None
 ) -> typing.Tuple[typing.Callable, typing.Callable]:
     """
     Build the tqdm progress bar on the host
@@ -91,10 +105,20 @@ def build_tqdm(
         message = f"Running for {n:,} iterations"
     tqdm_bars = {}
 
-    if n > 20:
-        print_rate = int(n / 20)
+    if print_rate is None:
+        if n > 20:
+            print_rate = int(n / 20)
+        else:
+            print_rate = 1
     else:
-        print_rate = 1
+        if print_rate < 1:
+            raise ValueError(f"Print rate should be > 0 got {print_rate}")
+        elif print_rate > n:
+            raise ValueError(
+                "Print rate should be less than the "
+                f"number of steps {n}, got {print_rate}"
+            )
+
     remainder = n % print_rate
 
     def _define_tqdm(arg, transform):
