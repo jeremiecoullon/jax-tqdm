@@ -66,6 +66,25 @@ last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 
 will update every other step.
 
+### Progress bar options
+
+Any additional keyword arguments are passed to the [tqdm](https://github.com/tqdm/tqdm)
+progress bar constructor. For example:
+
+```python
+from jax_tqdm import scan_tqdm
+from jax import lax
+import jax.numpy as jnp
+
+n = 10_000
+
+@scan_tqdm(n, print_rate=1, desc='progress bar', position=0, leave=False)
+def step(carry, x):
+    return carry + 1, carry + 1
+
+last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
+```
+
 ## Why JAX-tqdm?
 
 JAX functions are [pure](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions),
