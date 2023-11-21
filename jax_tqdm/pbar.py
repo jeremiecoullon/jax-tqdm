@@ -103,9 +103,9 @@ def build_tqdm(
     Build the tqdm progress bar on the host
     """
 
-    desc = kwargs.pop('desc', f'Running for {n:,} iterations')
-    message = kwargs.pop('message', desc)
-    for kwarg in ('total', 'mininterval', 'maxinterval', 'miniters'):
+    desc = kwargs.pop("desc", f"Running for {n:,} iterations")
+    message = kwargs.pop("message", desc)
+    for kwarg in ("total", "mininterval", "maxinterval", "miniters"):
         kwargs.pop(kwarg, None)
 
     tqdm_bars = {}
