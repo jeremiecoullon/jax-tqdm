@@ -8,7 +8,7 @@ from tqdm.auto import tqdm
 def scan_tqdm(
     n: int,
     print_rate: typing.Optional[int] = None,
-    message: typing.Optional[str] = None,
+    **kwargs,
 ) -> typing.Callable:
     """
     tqdm progress bar for a JAX scan
@@ -17,11 +17,11 @@ def scan_tqdm(
     ----------
     n : int
         Number of scan steps/iterations.
-    print_rate: int
+    print_rate : int
         Optional integer rate at which the progress bar will be updated,
         by default the print rate will 1/20th of the total number of steps.
-    message : str
-        Optional string to prepend to tqdm progress bar.
+    **kwargs
+        Extra keyword arguments to pass to tqdm.
 
     Returns
     -------
@@ -29,7 +29,7 @@ def scan_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, message)
+    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, **kwargs)
 
     def _scan_tqdm(func):
         """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
@@ -55,7 +55,7 @@ def scan_tqdm(
 def loop_tqdm(
     n: int,
     print_rate: typing.Optional[int] = None,
-    message: typing.Optional[str] = None,
+    **kwargs,
 ) -> typing.Callable:
     """
     tqdm progress bar for a JAX fori_loop
@@ -67,8 +67,8 @@ def loop_tqdm(
     print_rate: int
         Optional integer rate at which the progress bar will be updated,
         by default the print rate will 1/20th of the total number of steps.
-    message : str
-        Optional string to prepend to tqdm progress bar.
+    **kwargs
+        Extra keyword arguments to pass to tqdm.
 
     Returns
     -------
@@ -76,7 +76,7 @@ def loop_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, message)
+    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, **kwargs)
 
     def _loop_tqdm(func):
         """
@@ -95,14 +95,19 @@ def loop_tqdm(
 
 
 def build_tqdm(
-    n: int, print_rate: typing.Optional[int], message: typing.Optional[str] = None
+    n: int,
+    print_rate: typing.Optional[int],
+    **kwargs,
 ) -> typing.Tuple[typing.Callable, typing.Callable]:
     """
     Build the tqdm progress bar on the host
     """
 
-    if message is None:
-        message = f"Running for {n:,} iterations"
+    desc = kwargs.pop("desc", f"Running for {n:,} iterations")
+    message = kwargs.pop("message", desc)
+    for kwarg in ("total", "mininterval", "maxinterval", "miniters"):
+        kwargs.pop(kwarg, None)
+
     tqdm_bars = {}
 
     if print_rate is None:
@@ -122,7 +127,7 @@ def build_tqdm(
     remainder = n % print_rate
 
     def _define_tqdm(arg, transform):
-        tqdm_bars[0] = tqdm(range(n))
+        tqdm_bars[0] = tqdm(range(n), **kwargs)
         tqdm_bars[0].set_description(message, refresh=False)
 
     def _update_tqdm(arg, transform):
