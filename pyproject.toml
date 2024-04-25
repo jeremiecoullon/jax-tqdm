@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jax-tqdm"
-version = "0.1.2"
+version = "0.2.0"
 description = "Tqdm progress bar for JAX scans and loops"
 authors = [
     "Jeremie Coullon <jeremie.coullon@gmail.com>",
@@ -14,9 +14,9 @@ keywords = ["jax", "tqdm"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.9,<4.0"
 tqdm = "^4.64.1"
-jax = ">=0.3.5"
+jax = ">=0.4.12"
 
 
 [tool.poetry.group.dev.dependencies]
