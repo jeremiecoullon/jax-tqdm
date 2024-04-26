@@ -89,7 +89,8 @@ last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 
 JAX functions are [pure](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions),
 so side effects such as printing progress when running scans and loops are not allowed.
-However, the [host_callback module](https://jax.readthedocs.io/en/latest/jax.experimental.host_callback.html)
+However, the
+[debug module](https://jax.readthedocs.io/en/latest/notebooks/external_callbacks.html#exploring-debug-callback)
 has primitives for calling Python functions on the host from JAX code. This can be used
 to update a Python tqdm progress bar regularly during the computation. JAX-tqdm
 implements this for JAX scans and loops and is used by simply adding a decorator to the
