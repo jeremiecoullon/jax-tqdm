@@ -131,7 +131,7 @@ def build_tqdm(
         tqdm_bars[0].set_description(message, refresh=False)
 
     def _update_tqdm(arg, transform):
-        tqdm_bars[0].update(arg)
+        tqdm_bars[0].update(int(arg))
 
     def _update_progress_bar(iter_num):
         "Updates tqdm from a JAX scan or loop"
