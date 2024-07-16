@@ -66,6 +66,23 @@ last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 
 will update every other step.
 
+### Progress bar type
+
+You can select the [tqdm](https://github.com/tqdm/tqdm) [submodule](https://github.com/tqdm/tqdm/tree/master?tab=readme-ov-file#submodules) manually with the `tqdm_type` option. The options are `'std'`, `'notebook'`, or `'auto'`.
+```python
+from jax_tqdm import scan_tqdm
+from jax import lax
+import jax.numpy as jnp
+
+n = 10_000
+
+@scan_tqdm(n, print_rate=1, tqdm_type='std') # tqdm_type='std' or 'notebook' or 'auto'
+def step(carry, x):
+    return carry + 1, carry + 1
+
+last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
+```
+
 ### Progress bar options
 
 Any additional keyword arguments are passed to the [tqdm](https://github.com/tqdm/tqdm)
