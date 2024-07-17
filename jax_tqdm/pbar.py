@@ -100,15 +100,21 @@ def loop_tqdm(
 
 def build_tqdm(
     n: int,
-    print_rate: typing.Optional[int] = None,
-    tqdm_type: str = "auto",
+    print_rate: typing.Optional[int],
+    tqdm_type: str,
     **kwargs,
 ) -> typing.Tuple[typing.Callable, typing.Callable]:
     """
     Build the tqdm progress bar on the host
     """
 
+    if tqdm_type not in ("auto", "std", "notebook"):
+        raise ValueError(
+            'tqdm_type should be one of "auto", "std", or "notebook" '
+            f'but got "{tqdm_type}"'
+        )
     pbar = getattr(tqdm, tqdm_type).tqdm
+
     desc = kwargs.pop("desc", f"Running for {n:,} iterations")
     message = kwargs.pop("message", desc)
     for kwarg in ("total", "mininterval", "maxinterval", "miniters"):
