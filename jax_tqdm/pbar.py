@@ -1,13 +1,16 @@
 import typing
 
 import jax
+import tqdm.auto
+import tqdm.notebook
+import tqdm.std
 from jax.debug import callback
-from tqdm.auto import tqdm
 
 
 def scan_tqdm(
     n: int,
     print_rate: typing.Optional[int] = None,
+    tqdm_type: str = "auto",
     **kwargs,
 ) -> typing.Callable:
     """
@@ -29,7 +32,7 @@ def scan_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, **kwargs)
+    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
 
     def _scan_tqdm(func):
         """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
@@ -55,6 +58,7 @@ def scan_tqdm(
 def loop_tqdm(
     n: int,
     print_rate: typing.Optional[int] = None,
+    tqdm_type: str = "auto",
     **kwargs,
 ) -> typing.Callable:
     """
@@ -76,7 +80,7 @@ def loop_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, **kwargs)
+    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
 
     def _loop_tqdm(func):
         """
@@ -97,11 +101,19 @@ def loop_tqdm(
 def build_tqdm(
     n: int,
     print_rate: typing.Optional[int],
+    tqdm_type: str,
     **kwargs,
 ) -> typing.Tuple[typing.Callable, typing.Callable]:
     """
     Build the tqdm progress bar on the host
     """
+
+    if tqdm_type not in ("auto", "std", "notebook"):
+        raise ValueError(
+            'tqdm_type should be one of "auto", "std", or "notebook" '
+            f'but got "{tqdm_type}"'
+        )
+    pbar = getattr(tqdm, tqdm_type).tqdm
 
     desc = kwargs.pop("desc", f"Running for {n:,} iterations")
     message = kwargs.pop("message", desc)
@@ -127,7 +139,7 @@ def build_tqdm(
     remainder = n % print_rate
 
     def _define_tqdm(arg, transform):
-        tqdm_bars[0] = tqdm(range(n), **kwargs)
+        tqdm_bars[0] = pbar(range(n), **kwargs)
         tqdm_bars[0].set_description(message, refresh=False)
 
     def _update_tqdm(arg, transform):
