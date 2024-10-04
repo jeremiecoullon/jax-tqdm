@@ -23,6 +23,8 @@ def scan_tqdm(
     print_rate : int
         Optional integer rate at which the progress bar will be updated,
         by default the print rate will 1/20th of the total number of steps.
+    tqdm_type: str
+        Type of progress-bar, should be one of "auto", "std", or "notebook".
     **kwargs
         Extra keyword arguments to pass to tqdm.
 
@@ -71,6 +73,8 @@ def loop_tqdm(
     print_rate: int
         Optional integer rate at which the progress bar will be updated,
         by default the print rate will 1/20th of the total number of steps.
+    tqdm_type: str
+        Type of progress-bar, should be one of "auto", "std", or "notebook".
     **kwargs
         Extra keyword arguments to pass to tqdm.
 
