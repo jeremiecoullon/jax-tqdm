@@ -79,3 +79,27 @@ def test_vmap_w_loop(print_rate):
     last_numbers = jax.vmap(inner)(jax.numpy.arange(n_maps))
 
     assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
+
+
+def test_vmap_w_position_keyword():
+    n = 10_000
+    n_maps = 5
+
+    @scan_tqdm(n, position=2)
+    def step(carry, _):
+        return carry + 1, carry + 1
+
+    @jax.jit
+    def inner(i):
+        init = PBar(id=i, carry=0)
+        final, _all_numbers = jax.lax.scan(step, init, jnp.arange(n))
+        return (
+            final.carry,
+            _all_numbers,
+        )
+
+    last_numbers, all_numbers = jax.vmap(inner)(jax.numpy.arange(n_maps))
+
+    assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
+    assert all_numbers.shape == (n_maps, 10_000)
+    assert jnp.array_equal(all_numbers, jnp.tile(1 + jnp.arange(n), (n_maps, 1)))

@@ -145,6 +145,8 @@ def build_tqdm(
 
     desc = kwargs.pop("desc", f"Running for {n:,} iterations")
     message = kwargs.pop("message", desc)
+    position_offset = kwargs.pop("position", 0)
+
     for kwarg in ("total", "mininterval", "maxinterval", "miniters"):
         kwargs.pop(kwarg, None)
 
@@ -168,7 +170,7 @@ def build_tqdm(
 
     def _define_tqdm(_arg, bar_id: int):
         bar_id = int(bar_id)
-        tqdm_bars[bar_id] = pbar(range(n), position=bar_id, **kwargs)
+        tqdm_bars[bar_id] = pbar(range(n), position=bar_id + position_offset, **kwargs)
         tqdm_bars[bar_id].set_description(message, refresh=False)
 
     def _update_tqdm(arg, bar_id: int):

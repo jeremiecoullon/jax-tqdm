@@ -16,4 +16,4 @@ jobs:
           installer-parallel: true
       - run: poetry install
       - run: pip install --upgrade "jax[cpu]"
-      - run: pytest -vv
+      - run: pytest -vvs
