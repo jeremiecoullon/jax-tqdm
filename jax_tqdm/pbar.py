@@ -1,5 +1,4 @@
 import typing
-from functools import partial
 
 import chex
 import jax
@@ -10,8 +9,8 @@ from jax.debug import callback
 
 
 @chex.dataclass
-class BarId:
-    i: int
+class PBar:
+    id: int
     carry: typing.Any
 
 
@@ -57,12 +56,12 @@ def scan_tqdm(
             else:
                 iter_num = x
 
-            if isinstance(carry, BarId):
-                bar_id = carry.i
+            if isinstance(carry, PBar):
+                bar_id = carry.id
                 carry = carry.carry
                 _update_progress_bar(iter_num, bar_id=bar_id)
                 result = func(carry, x)
-                result = (BarId(i=bar_id, carry=result[0]), result[1])
+                result = (PBar(id=bar_id, carry=result[0]), result[1])
                 return close_tqdm(result, iter_num, bar_id=bar_id)
             else:
                 _update_progress_bar(iter_num)
@@ -110,12 +109,12 @@ def loop_tqdm(
         """
 
         def wrapper_progress_bar(i, val):
-            if isinstance(val, BarId):
-                bar_id = val.i
+            if isinstance(val, PBar):
+                bar_id = val.id
                 val = val.carry
                 _update_progress_bar(i, bar_id=bar_id)
                 result = func(i, val)
-                result = BarId(i=bar_id, carry=result)
+                result = PBar(id=bar_id, carry=result)
                 return close_tqdm(result, i, bar_id=bar_id)
             else:
                 _update_progress_bar(i)
@@ -203,7 +202,6 @@ def build_tqdm(
     def _close_tqdm(_arg, bar_id: int):
         tqdm_bars[int(bar_id)].close()
 
-    @partial(jax.jit, static_argnames=("bar_id",))
     def close_tqdm(result, iter_num, bar_id: int = 0):
         _ = jax.lax.cond(
             iter_num == n - 1,

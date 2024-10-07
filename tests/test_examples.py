@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from jax_tqdm import BarId, loop_tqdm, scan_tqdm
+from jax_tqdm import PBar, loop_tqdm, scan_tqdm
 
 
 @pytest.mark.parametrize("print_rate", [None, 1, 10])
@@ -36,30 +36,35 @@ def test_readme_fori_loop_example(print_rate):
     assert int(last_number) == n
 
 
-def test_vmap_w_scan():
+@pytest.mark.parametrize("print_rate", [None, 1, 10])
+def test_vmap_w_scan(print_rate):
     n = 10_000
+    n_maps = 5
 
-    @scan_tqdm(n, print_rate=10)
+    @scan_tqdm(n, print_rate=print_rate)
     def step(carry, _):
         return carry + 1, carry + 1
 
     @jax.jit
     def inner(i):
-        init = BarId(i=i, carry=0)
+        init = PBar(id=i, carry=0)
         final, _all_numbers = jax.lax.scan(step, init, jnp.arange(n))
         return (
             final.carry,
             _all_numbers,
         )
 
-    last_numbers, all_numbers = jax.vmap(inner)(jax.numpy.arange(5))
+    last_numbers, all_numbers = jax.vmap(inner)(jax.numpy.arange(n_maps))
 
-    assert int(last_numbers[0]) == n
-    assert jnp.array_equal(all_numbers[0], 1 + jnp.arange(n))
+    assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
+    assert all_numbers.shape == (n_maps, 10_000)
+    assert jnp.array_equal(all_numbers, jnp.tile(1 + jnp.arange(n), (n_maps, 1)))
 
 
-def test_vmap_w_loop():
+@pytest.mark.parametrize("print_rate", [None, 1, 10])
+def test_vmap_w_loop(print_rate):
     n = 10_000
+    n_maps = 5
 
     @loop_tqdm(n, print_rate=10)
     def step(i, val):
@@ -67,10 +72,10 @@ def test_vmap_w_loop():
 
     @jax.jit
     def inner(i):
-        init = BarId(i=i, carry=0)
+        init = PBar(id=i, carry=0)
         result = jax.lax.fori_loop(0, n, step, init)
         return result.carry
 
-    last_numbers = jax.vmap(inner)(jax.numpy.arange(5))
+    last_numbers = jax.vmap(inner)(jax.numpy.arange(n_maps))
 
-    assert int(last_numbers[0]) == n
+    assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
