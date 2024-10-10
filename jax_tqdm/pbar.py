@@ -166,8 +166,6 @@ def build_tqdm(
                 f"number of steps {n}, got {print_rate}"
             )
 
-    remainder = n % print_rate
-
     def _define_tqdm(_arg, bar_id: int):
         bar_id = int(bar_id)
         tqdm_bars[bar_id] = pbar(range(n), position=bar_id + position_offset, **kwargs)
@@ -184,24 +182,18 @@ def build_tqdm(
             lambda _: None,
             operand=None,
         )
-
+        
         _ = jax.lax.cond(
-            # update tqdm every multiple of `print_rate` except at the end
-            (iter_num % print_rate == 0) & (iter_num != n - remainder),
+            # update tqdm every multiple of `print_rate`
+            (iter_num != 0) & (iter_num % print_rate == 0),
             lambda _: callback(_update_tqdm, print_rate, bar_id, ordered=True),
             lambda _: None,
             operand=None,
         )
 
-        _ = jax.lax.cond(
-            # update tqdm by `remainder`
-            iter_num == n - remainder,
-            lambda _: callback(_update_tqdm, remainder, bar_id, ordered=True),
-            lambda _: None,
-            operand=None,
-        )
-
     def _close_tqdm(_arg, bar_id: int):
+        dif = n - tqdm_bars[int(bar_id)].n
+        tqdm_bars[int(bar_id)].update(int(dif))
         tqdm_bars[int(bar_id)].close()
 
     def close_tqdm(result, iter_num, bar_id: int = 0):
