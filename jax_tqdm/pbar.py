@@ -41,7 +41,7 @@ def scan_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
+    update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
 
     def _scan_tqdm(func):
         """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
@@ -59,12 +59,12 @@ def scan_tqdm(
             if isinstance(carry, PBar):
                 bar_id = carry.id
                 carry = carry.carry
-                _update_progress_bar(iter_num, bar_id=bar_id)
+                update_progress_bar(iter_num, bar_id=bar_id)
                 result = func(carry, x)
                 result = (PBar(id=bar_id, carry=result[0]), result[1])
                 return close_tqdm(result, iter_num, bar_id=bar_id)
             else:
-                _update_progress_bar(iter_num)
+                update_progress_bar(iter_num)
                 result = func(carry, x)
                 return close_tqdm(result, iter_num)
 
@@ -167,50 +167,60 @@ def build_tqdm(
             )
 
     remainder = n % print_rate
+    remainder = remainder if remainder > 0 else print_rate
 
-    def _define_tqdm(_arg, bar_id: int):
+    def _define_tqdm(bar_id: int):
         bar_id = int(bar_id)
-        tqdm_bars[bar_id] = pbar(range(n), position=bar_id + position_offset, **kwargs)
-        tqdm_bars[bar_id].set_description(message, refresh=False)
-
-    def _update_tqdm(arg, bar_id: int):
-        tqdm_bars[int(bar_id)].update(int(arg))
-
-    def _update_progress_bar(iter_num, bar_id: int = 0):
-        """Updates tqdm from a JAX scan or loop"""
-        _ = jax.lax.cond(
-            iter_num == 0,
-            lambda _: callback(_define_tqdm, None, bar_id, ordered=True),
-            lambda _: None,
-            operand=None,
+        bar = pbar(
+            total=n,
+            position=bar_id + position_offset,
+            desc=message,
+            **kwargs,
         )
+        tqdm_bars[bar_id] = bar
 
-        _ = jax.lax.cond(
-            # update tqdm every multiple of `print_rate` except at the end
-            (iter_num % print_rate == 0) & (iter_num != n - remainder),
-            lambda _: callback(_update_tqdm, print_rate, bar_id, ordered=True),
-            lambda _: None,
-            operand=None,
-        )
+    def _update_tqdm(bar_id: int):
+        bar_id = int(bar_id)
+        bar = tqdm_bars[bar_id]
+        bar.update(print_rate)
+        tqdm_bars[bar_id] = bar
 
-        _ = jax.lax.cond(
-            # update tqdm by `remainder`
-            iter_num == n - remainder,
-            lambda _: callback(_update_tqdm, remainder, bar_id, ordered=True),
-            lambda _: None,
-            operand=None,
-        )
+    def _update_remainder(bar_id: int):
+        tqdm_bars[int(bar_id)].update(remainder)
 
-    def _close_tqdm(_arg, bar_id: int):
+    def _close_tqdm(bar_id: int):
         tqdm_bars[int(bar_id)].close()
 
-    def close_tqdm(result, iter_num, bar_id: int = 0):
+    def update_progress_bar(iter_num, bar_id: int = 0):
+        """Updates tqdm from a JAX scan or loop"""
+
+        def _inner(i):
+            return jax.lax.cond(
+                i % print_rate == 0,
+                lambda: callback(_update_tqdm, bar_id, ordered=True),
+                lambda: None,
+            )
+
         _ = jax.lax.cond(
-            iter_num == n - 1,
-            lambda _: callback(_close_tqdm, None, bar_id, ordered=True),
-            lambda _: None,
-            operand=None,
+            iter_num == 0,
+            lambda _: callback(_define_tqdm, bar_id, ordered=True),
+            _inner,
+            iter_num,
+        )
+
+    def close_tqdm(result, iter_num, bar_id: int = 0):
+
+        steps_done = iter_num + 1
+
+        def _inner_close():
+            callback(_update_remainder, bar_id, ordered=True)
+            callback(_close_tqdm, bar_id, ordered=True)
+
+        _ = jax.lax.cond(
+            steps_done == n,
+            _inner_close,
+            lambda: None,
         )
         return result
 
-    return _update_progress_bar, close_tqdm
+    return update_progress_bar, close_tqdm
