@@ -17,6 +17,7 @@ class PBar:
 def scan_tqdm(
     n: int,
     print_rate: typing.Optional[int] = None,
+    bar_id: int = 0,
     tqdm_type: str = "auto",
     **kwargs,
 ) -> typing.Callable:
@@ -30,6 +31,8 @@ def scan_tqdm(
     print_rate : int
         Optional integer rate at which the progress bar will be updated,
         by default the print rate will 1/20th of the total number of steps.
+    bar_id: int
+        Index used to reference progress bars when multiple are called.
     tqdm_type: str
         Type of progress-bar, should be one of "auto", "std", or "notebook".
     **kwargs
@@ -41,7 +44,7 @@ def scan_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
+    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, bar_id, tqdm_type, **kwargs)
 
     def _scan_tqdm(func):
         """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
@@ -76,6 +79,7 @@ def scan_tqdm(
 def loop_tqdm(
     n: int,
     print_rate: typing.Optional[int] = None,
+    bar_id: int = 0,
     tqdm_type: str = "auto",
     **kwargs,
 ) -> typing.Callable:
@@ -89,6 +93,8 @@ def loop_tqdm(
     print_rate: int
         Optional integer rate at which the progress bar will be updated,
         by default the print rate will 1/20th of the total number of steps.
+    bar_id: int
+        Index used to reference progress bars when multiple are called.
     tqdm_type: str
         Type of progress-bar, should be one of "auto", "std", or "notebook".
     **kwargs
@@ -100,7 +106,7 @@ def loop_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
+    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, bar_id, tqdm_type, **kwargs)
 
     def _loop_tqdm(func):
         """
@@ -129,6 +135,7 @@ def loop_tqdm(
 def build_tqdm(
     n: int,
     print_rate: typing.Optional[int],
+    bar_id: int,
     tqdm_type: str,
     **kwargs,
 ) -> typing.Tuple[typing.Callable, typing.Callable]:
@@ -150,8 +157,6 @@ def build_tqdm(
     for kwarg in ("total", "mininterval", "maxinterval", "miniters"):
         kwargs.pop(kwarg, None)
 
-    tqdm_bars = dict()
-
     if print_rate is None:
         if n > 20:
             print_rate = int(n / 20)
@@ -165,13 +170,23 @@ def build_tqdm(
                 "Print rate should be less than the "
                 f"number of steps {n}, got {print_rate}"
             )
+    
+    def _check_valid_id(bar_id: int):
+        """If traced, we must check the id with a callback"""
+        if bar_id < 0:
+            raise ValueError(f"Progress bar index should be >= 0, got {bar_id}")
+    
+    callback(_check_valid_id, bar_id, ordered=True)
 
-    remainder = n % print_rate
+    tqdm_bars = dict()
 
-    def _define_tqdm(_arg, bar_id: int):
+    # immediately initialize progress bars
+    def _define_tqdm(bar_id: int):
         bar_id = int(bar_id)
         tqdm_bars[bar_id] = pbar(range(n), position=bar_id + position_offset, **kwargs)
-        tqdm_bars[bar_id].set_description(message, refresh=False)
+        tqdm_bars[bar_id].set_description(message)
+    
+    callback(_define_tqdm, bar_id, ordered=True)
 
     def _update_tqdm(arg, bar_id: int):
         tqdm_bars[int(bar_id)].update(int(arg))
@@ -179,34 +194,22 @@ def build_tqdm(
     def _update_progress_bar(iter_num, bar_id: int = 0):
         """Updates tqdm from a JAX scan or loop"""
         _ = jax.lax.cond(
-            iter_num == 0,
-            lambda _: callback(_define_tqdm, None, bar_id, ordered=True),
-            lambda _: None,
-            operand=None,
-        )
-
-        _ = jax.lax.cond(
-            # update tqdm every multiple of `print_rate` except at the end
-            (iter_num % print_rate == 0) & (iter_num != n - remainder),
+            # update tqdm every multiple of `print_rate`
+            ((iter_num + 1) % print_rate == 0),
             lambda _: callback(_update_tqdm, print_rate, bar_id, ordered=True),
             lambda _: None,
             operand=None,
         )
 
-        _ = jax.lax.cond(
-            # update tqdm by `remainder`
-            iter_num == n - remainder,
-            lambda _: callback(_update_tqdm, remainder, bar_id, ordered=True),
-            lambda _: None,
-            operand=None,
-        )
-
     def _close_tqdm(_arg, bar_id: int):
+        """Update remaining steps and close"""
+        dif = n - tqdm_bars[int(bar_id)].n
+        _update_tqdm(dif, bar_id)
         tqdm_bars[int(bar_id)].close()
 
     def close_tqdm(result, iter_num, bar_id: int = 0):
         _ = jax.lax.cond(
-            iter_num == n - 1,
+            iter_num + 1 == n,
             lambda _: callback(_close_tqdm, None, bar_id, ordered=True),
             lambda _: None,
             operand=None,

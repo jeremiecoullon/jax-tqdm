@@ -41,20 +41,24 @@ def test_vmap_w_scan(print_rate):
     n = 10_000
     n_maps = 5
 
-    @scan_tqdm(n, print_rate=print_rate)
-    def step(carry, _):
-        return carry + 1, carry + 1
-
     @jax.jit
-    def inner(i):
-        init = PBar(id=i, carry=0)
-        final, _all_numbers = jax.lax.scan(step, init, jnp.arange(n))
-        return (
-            final.carry,
-            _all_numbers,
-        )
+    def run_scan(i):
 
-    last_numbers, all_numbers = jax.vmap(inner)(jax.numpy.arange(n_maps))
+        @scan_tqdm(n, print_rate=print_rate, bar_id=i)
+        def step(carry, _):
+            return carry + 1, carry + 1
+
+        @jax.jit
+        def inner(i):
+            init = PBar(id=i, carry=0)
+            final, _all_numbers = jax.lax.scan(step, init, jnp.arange(n))
+            return (
+                final.carry,
+                _all_numbers,
+            )
+        return inner(i)
+    
+    last_numbers, all_numbers = jax.vmap(run_scan)(jax.numpy.arange(n_maps))
 
     assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
     assert all_numbers.shape == (n_maps, 10_000)
@@ -66,17 +70,22 @@ def test_vmap_w_loop(print_rate):
     n = 10_000
     n_maps = 5
 
-    @loop_tqdm(n, print_rate=10)
-    def step(i, val):
-        return val + 1
-
     @jax.jit
-    def inner(i):
-        init = PBar(id=i, carry=0)
-        result = jax.lax.fori_loop(0, n, step, init)
-        return result.carry
+    def run_loop(i):
 
-    last_numbers = jax.vmap(inner)(jax.numpy.arange(n_maps))
+        @loop_tqdm(n, print_rate=10, bar_id=i)
+        def step(i, val):
+            return val + 1
+
+        @jax.jit
+        def inner(i):
+            init = PBar(id=i, carry=0)
+            result = jax.lax.fori_loop(0, n, step, init)
+            return result.carry
+        
+        return inner(i)
+
+    last_numbers = jax.vmap(run_loop)(jax.numpy.arange(n_maps))
 
     assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
 
@@ -85,20 +94,24 @@ def test_vmap_w_position_keyword():
     n = 10_000
     n_maps = 5
 
-    @scan_tqdm(n, position=2)
-    def step(carry, _):
-        return carry + 1, carry + 1
-
     @jax.jit
-    def inner(i):
-        init = PBar(id=i, carry=0)
-        final, _all_numbers = jax.lax.scan(step, init, jnp.arange(n))
-        return (
-            final.carry,
-            _all_numbers,
-        )
+    def run_scan(i):
 
-    last_numbers, all_numbers = jax.vmap(inner)(jax.numpy.arange(n_maps))
+        @scan_tqdm(n, position=2, bar_id=i)
+        def step(carry, _):
+            return carry + 1, carry + 1
+
+        @jax.jit
+        def inner(i):
+            init = PBar(id=i, carry=0)
+            final, _all_numbers = jax.lax.scan(step, init, jnp.arange(n))
+            return (
+                final.carry,
+                _all_numbers,
+            )
+        return inner(i)
+
+    last_numbers, all_numbers = jax.vmap(run_scan)(jax.numpy.arange(n_maps))
 
     assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
     assert all_numbers.shape == (n_maps, 10_000)
