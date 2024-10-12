@@ -170,26 +170,27 @@ def build_tqdm(
     remainder = remainder if remainder > 0 else print_rate
 
     def _define_tqdm(bar_id: int):
-        tqdm_bars[int(bar_id)] = pbar(
+        bar_id = int(bar_id)
+        tqdm_bars[bar_id] = pbar(
             total=n,
             position=bar_id + position_offset,
             desc=message,
+            leave=True,
             **kwargs,
         )
 
     def _update_tqdm(bar_id: int):
         tqdm_bars[int(bar_id)].update(print_rate)
 
-    def _update_remainder(bar_id: int):
-        tqdm_bars[int(bar_id)].update(remainder)
-
     def _close_tqdm(bar_id: int):
+        tqdm_bars[int(bar_id)].update(remainder)
+        tqdm_bars[int(bar_id)].clear()
         tqdm_bars[int(bar_id)].close()
 
     def update_progress_bar(carry: typing.Any, iter_num, bar_id: int = 0):
         """Updates tqdm from a JAX scan or loop"""
 
-        def _inner_init(i, _carry):
+        def _inner_init(_i, _carry):
             callback(_define_tqdm, bar_id, ordered=True)
             return _carry
 
@@ -211,9 +212,8 @@ def build_tqdm(
 
         return carry
 
-    def close_tqdm(result, iter_num, bar_id: int = 0):
+    def close_tqdm(result: typing.Any, iter_num: int, bar_id: int = 0):
         def _inner_close(_result):
-            callback(_update_remainder, bar_id, ordered=True)
             callback(_close_tqdm, bar_id, ordered=True)
             return _result
 
