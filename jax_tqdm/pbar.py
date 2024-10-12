@@ -59,12 +59,12 @@ def scan_tqdm(
             if isinstance(carry, PBar):
                 bar_id = carry.id
                 carry = carry.carry
-                update_progress_bar(iter_num, bar_id=bar_id)
+                carry = update_progress_bar(carry, iter_num, bar_id=bar_id)
                 result = func(carry, x)
                 result = (PBar(id=bar_id, carry=result[0]), result[1])
                 return close_tqdm(result, iter_num, bar_id=bar_id)
             else:
-                update_progress_bar(iter_num)
+                carry = update_progress_bar(carry, iter_num)
                 result = func(carry, x)
                 return close_tqdm(result, iter_num)
 
@@ -112,12 +112,12 @@ def loop_tqdm(
             if isinstance(val, PBar):
                 bar_id = val.id
                 val = val.carry
-                update_progress_bar(i, bar_id=bar_id)
+                val = update_progress_bar(val, i, bar_id=bar_id)
                 result = func(i, val)
                 result = PBar(id=bar_id, carry=result)
                 return close_tqdm(result, i, bar_id=bar_id)
             else:
-                update_progress_bar(i)
+                val = update_progress_bar(val, i)
                 result = func(i, val)
                 return close_tqdm(result, i)
 
@@ -186,33 +186,38 @@ def build_tqdm(
     def _close_tqdm(bar_id: int):
         tqdm_bars[int(bar_id)].close()
 
-    def update_progress_bar(iter_num, bar_id: int = 0):
+    def update_progress_bar(carry: typing.Any, iter_num, bar_id: int = 0):
         """Updates tqdm from a JAX scan or loop"""
 
-        def _inner_update(i):
-            return jax.lax.cond(
+        def _inner_init(i, _carry):
+            callback(_define_tqdm, bar_id, ordered=True)
+            return _carry
+
+        def _inner_update(i, _carry):
+            _ = jax.lax.cond(
                 i % print_rate == 0,
                 lambda: callback(_update_tqdm, bar_id, ordered=True),
                 lambda: None,
             )
+            return _carry
 
-        _ = jax.lax.cond(
+        carry = jax.lax.cond(
             iter_num == 0,
-            lambda _: callback(_define_tqdm, bar_id, ordered=True),
+            _inner_init,
             _inner_update,
             iter_num,
+            carry,
         )
+
+        return carry
 
     def close_tqdm(result, iter_num, bar_id: int = 0):
-        def _inner_close():
+        def _inner_close(_result):
             callback(_update_remainder, bar_id, ordered=True)
             callback(_close_tqdm, bar_id, ordered=True)
+            return _result
 
-        _ = jax.lax.cond(
-            iter_num + 1 == n,
-            _inner_close,
-            lambda: None,
-        )
+        result = jax.lax.cond(iter_num + 1 == n, _inner_close, lambda r: r, result)
         return result
 
     return update_progress_bar, close_tqdm
