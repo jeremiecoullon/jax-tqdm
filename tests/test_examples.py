@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from jax_tqdm import PBar, loop_tqdm, scan_tqdm
+from jax_tqdm import loop_tqdm, scan_tqdm
 
 
 @pytest.mark.parametrize("print_rate", [None, 1, 10])
@@ -43,21 +43,12 @@ def test_vmap_w_scan(print_rate):
 
     @jax.jit
     def run_scan(i):
-
         @scan_tqdm(n, print_rate=print_rate, bar_id=i)
         def step(carry, _):
             return carry + 1, carry + 1
 
-        @jax.jit
-        def inner(i):
-            init = PBar(id=i, carry=0)
-            final, _all_numbers = jax.lax.scan(step, init, jnp.arange(n))
-            return (
-                final.carry,
-                _all_numbers,
-            )
-        return inner(i)
-    
+        return jax.lax.scan(step, 0, jnp.arange(n))
+
     last_numbers, all_numbers = jax.vmap(run_scan)(jax.numpy.arange(n_maps))
 
     assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
@@ -72,18 +63,11 @@ def test_vmap_w_loop(print_rate):
 
     @jax.jit
     def run_loop(i):
-
         @loop_tqdm(n, print_rate=10, bar_id=i)
         def step(i, val):
             return val + 1
 
-        @jax.jit
-        def inner(i):
-            init = PBar(id=i, carry=0)
-            result = jax.lax.fori_loop(0, n, step, init)
-            return result.carry
-        
-        return inner(i)
+        return jax.lax.fori_loop(0, n, step, 0)
 
     last_numbers = jax.vmap(run_loop)(jax.numpy.arange(n_maps))
 
@@ -96,20 +80,11 @@ def test_vmap_w_position_keyword():
 
     @jax.jit
     def run_scan(i):
-
         @scan_tqdm(n, position=2, bar_id=i)
         def step(carry, _):
             return carry + 1, carry + 1
 
-        @jax.jit
-        def inner(i):
-            init = PBar(id=i, carry=0)
-            final, _all_numbers = jax.lax.scan(step, init, jnp.arange(n))
-            return (
-                final.carry,
-                _all_numbers,
-            )
-        return inner(i)
+        return jax.lax.scan(step, 0, jnp.arange(n))
 
     last_numbers, all_numbers = jax.vmap(run_scan)(jax.numpy.arange(n_maps))
 

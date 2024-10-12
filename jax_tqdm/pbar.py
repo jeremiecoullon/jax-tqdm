@@ -1,17 +1,10 @@
 import typing
 
-import chex
 import jax
 import tqdm.auto
 import tqdm.notebook
 import tqdm.std
 from jax.debug import callback
-
-
-@chex.dataclass
-class PBar:
-    id: int
-    carry: typing.Any
 
 
 def scan_tqdm(
@@ -44,7 +37,9 @@ def scan_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, bar_id, tqdm_type, **kwargs)
+    _update_progress_bar, close_tqdm = build_tqdm(
+        n, print_rate, bar_id, tqdm_type, **kwargs
+    )
 
     def _scan_tqdm(func):
         """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
@@ -59,17 +54,9 @@ def scan_tqdm(
             else:
                 iter_num = x
 
-            if isinstance(carry, PBar):
-                bar_id = carry.id
-                carry = carry.carry
-                _update_progress_bar(iter_num, bar_id=bar_id)
-                result = func(carry, x)
-                result = (PBar(id=bar_id, carry=result[0]), result[1])
-                return close_tqdm(result, iter_num, bar_id=bar_id)
-            else:
-                _update_progress_bar(iter_num)
-                result = func(carry, x)
-                return close_tqdm(result, iter_num)
+            _update_progress_bar(iter_num, bar_id=bar_id)
+            result = func(carry, x)
+            return close_tqdm(result, iter_num, bar_id=bar_id)
 
         return wrapper_progress_bar
 
@@ -106,7 +93,9 @@ def loop_tqdm(
         Progress bar wrapping function.
     """
 
-    _update_progress_bar, close_tqdm = build_tqdm(n, print_rate, bar_id, tqdm_type, **kwargs)
+    _update_progress_bar, close_tqdm = build_tqdm(
+        n, print_rate, bar_id, tqdm_type, **kwargs
+    )
 
     def _loop_tqdm(func):
         """
@@ -115,17 +104,9 @@ def loop_tqdm(
         """
 
         def wrapper_progress_bar(i, val):
-            if isinstance(val, PBar):
-                bar_id = val.id
-                val = val.carry
-                _update_progress_bar(i, bar_id=bar_id)
-                result = func(i, val)
-                result = PBar(id=bar_id, carry=result)
-                return close_tqdm(result, i, bar_id=bar_id)
-            else:
-                _update_progress_bar(i)
-                result = func(i, val)
-                return close_tqdm(result, i)
+            _update_progress_bar(i, bar_id=bar_id)
+            result = func(i, val)
+            return close_tqdm(result, i, bar_id=bar_id)
 
         return wrapper_progress_bar
 
@@ -170,12 +151,12 @@ def build_tqdm(
                 "Print rate should be less than the "
                 f"number of steps {n}, got {print_rate}"
             )
-    
+
     def _check_valid_id(bar_id: int):
         """If traced, we must check the id with a callback"""
         if bar_id < 0:
             raise ValueError(f"Progress bar index should be >= 0, got {bar_id}")
-    
+
     callback(_check_valid_id, bar_id, ordered=True)
 
     tqdm_bars = dict()
@@ -185,7 +166,7 @@ def build_tqdm(
         bar_id = int(bar_id)
         tqdm_bars[bar_id] = pbar(range(n), position=bar_id + position_offset, **kwargs)
         tqdm_bars[bar_id].set_description(message)
-    
+
     callback(_define_tqdm, bar_id, ordered=True)
 
     def _update_tqdm(arg, bar_id: int):

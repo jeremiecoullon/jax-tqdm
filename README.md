@@ -46,13 +46,12 @@ last_number = lax.fori_loop(0, n, step, 0)
 ### Scans & Loops Inside VMAP
 
 For scans and loops inside a map, jax-tqdm can print stacked progress bars
-showing the individual progress of each process. To do this, you can wrap
-the initial value of the loop or scan inside a `PBar` class, along with the
-index of the progress bar. Now, wrap the entire loop or scan in a function 
-that takes the index, and map that function. For example:
+showing the individual progress of each process. To do this, wrap the loop
+or scan in a function that takes the index of the progress bar and map that
+function. For example:
 
 ```python
-from jax_tqdm import PBar, scan_tqdm
+from jax_tqdm import scan_tqdm
 from jax import lax
 import jax.numpy as jnp
 
@@ -64,11 +63,7 @@ def run_scan(bar_id):
     def step(carry, x):
         return carry + 1, carry + 1
 
-    # Wrap the initial value and pass the progress bar index
-    init = PBar(id=bar_id, carry=0)
-    last_number, all_numbers = lax.scan(step, init, jnp.arange(n))
-
-    return last_number.carry, all_numbers
+    return lax.scan(step, 0, jnp.arange(n))
 
 n_bars = 5
 last_numbers, all_numbers = jax.vmap(run_scan)(jnp.arange(n_bars))
