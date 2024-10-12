@@ -84,7 +84,7 @@ def loop_tqdm(
 
     Parameters
     ----------
-    n : int
+    n: int
         Number of iterations.
     print_rate: int
         Optional integer rate at which the progress bar will be updated,
@@ -134,6 +134,18 @@ def build_tqdm(
 ) -> typing.Tuple[typing.Callable, typing.Callable]:
     """
     Build the tqdm progress bar on the host
+
+    Parameters
+    ----------
+    n: int
+        Number of updates
+    print_rate: int
+        Optional integer rate at which the progress bar will be updated,
+        If ``None`` the print rate will 1/20th of the total number of steps.
+    tqdm_type: str
+        Type of progress-bar, should be one of "auto", "std", or "notebook".
+    **kwargs
+        Extra keyword arguments to pass to tqdm.
     """
 
     if tqdm_type not in ("auto", "std", "notebook"):
@@ -187,7 +199,7 @@ def build_tqdm(
         _pbar.clear()
         _pbar.close()
 
-    def update_progress_bar(carry: typing.Any, iter_num, bar_id: int = 0):
+    def update_progress_bar(carry: typing.Any, iter_num: int, bar_id: int = 0):
         """Updates tqdm from a JAX scan or loop"""
 
         def _inner_init(_i, _carry):
