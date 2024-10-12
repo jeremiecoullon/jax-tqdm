@@ -175,7 +175,6 @@ def build_tqdm(
             total=n,
             position=bar_id + position_offset,
             desc=message,
-            leave=True,
             **kwargs,
         )
 
@@ -183,9 +182,10 @@ def build_tqdm(
         tqdm_bars[int(bar_id)].update(print_rate)
 
     def _close_tqdm(bar_id: int):
-        tqdm_bars[int(bar_id)].update(remainder)
-        tqdm_bars[int(bar_id)].clear()
-        tqdm_bars[int(bar_id)].close()
+        _pbar = tqdm_bars.pop(int(bar_id))
+        _pbar.update(remainder)
+        _pbar.clear()
+        _pbar.close()
 
     def update_progress_bar(carry: typing.Any, iter_num, bar_id: int = 0):
         """Updates tqdm from a JAX scan or loop"""
