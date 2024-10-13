@@ -59,12 +59,12 @@ def scan_tqdm(
             if isinstance(carry, PBar):
                 bar_id = carry.id
                 carry = carry.carry
-                carry = update_progress_bar(carry, iter_num, bar_id=bar_id)
+                carry, x = update_progress_bar((carry, x), iter_num, bar_id=bar_id)
                 result = func(carry, x)
                 result = (PBar(id=bar_id, carry=result[0]), result[1])
                 return close_tqdm(result, iter_num, bar_id=bar_id)
             else:
-                carry = update_progress_bar(carry, iter_num)
+                carry, x = update_progress_bar((carry, x), iter_num)
                 result = func(carry, x)
                 return close_tqdm(result, iter_num)
 
@@ -112,12 +112,12 @@ def loop_tqdm(
             if isinstance(val, PBar):
                 bar_id = val.id
                 val = val.carry
-                val = update_progress_bar(val, i, bar_id=bar_id)
+                i, val = update_progress_bar((i, val), i, bar_id=bar_id)
                 result = func(i, val)
                 result = PBar(id=bar_id, carry=result)
                 return close_tqdm(result, i, bar_id=bar_id)
             else:
-                val = update_progress_bar(val, i)
+                i, val = update_progress_bar((i, val), i)
                 result = func(i, val)
                 return close_tqdm(result, i)
 
