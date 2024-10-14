@@ -1,4 +1,4 @@
-# JAX-tqdm
+# JAX-Tqdm
 
 Add a [tqdm](https://github.com/tqdm/tqdm) progress bar to your JAX scans and loops.
 
@@ -10,9 +10,9 @@ Install with pip:
 pip install jax-tqdm
 ```
 
-## Example usage
+## Example Usage
 
-### in `jax.lax.scan`
+### In `jax.lax.scan`
 
 ```python
 from jax_tqdm import scan_tqdm
@@ -28,7 +28,7 @@ def step(carry, x):
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
 
-### in `jax.lax.fori_loop`
+### In `jax.lax.fori_loop`
 
 ```python
 from jax_tqdm import loop_tqdm
@@ -43,7 +43,7 @@ def step(i, val):
 last_number = lax.fori_loop(0, n, step, 0)
 ```
 
-### Scans & Loops Inside VMAP
+### Scans & Loops Inside Vmap
 
 For scans and loops inside a map, jax-tqdm can print stacked progress bars
 showing the individual progress of each process. To do this you can wrap
@@ -101,7 +101,7 @@ last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 
 will update every other step.
 
-### Progress bar type
+### Progress Bar Type
 
 You can select the [tqdm](https://github.com/tqdm/tqdm) [submodule](https://github.com/tqdm/tqdm/tree/master?tab=readme-ov-file#submodules) manually with the `tqdm_type` option. The options are `'std'`, `'notebook'`, or `'auto'`.
 ```python
@@ -118,7 +118,7 @@ def step(carry, x):
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
 
-### Progress bar options
+### Progress Bar Options
 
 Any additional keyword arguments are passed to the [tqdm](https://github.com/tqdm/tqdm)
 progress bar constructor. For example:
@@ -137,7 +137,7 @@ def step(carry, x):
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
 
-## Why JAX-tqdm?
+## Why JAX-Tqdm?
 
 JAX functions are [pure](https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#pure-functions),
 so side effects such as printing progress when running scans and loops are not allowed.
