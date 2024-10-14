@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jax-tqdm"
-version = "0.3.0"
+version = "0.3.1"
 description = "Tqdm progress bar for JAX scans and loops"
 authors = [
     "Jeremie Coullon <jeremie.coullon@gmail.com>",
