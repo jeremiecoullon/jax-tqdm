@@ -1,9 +1,9 @@
 # JAX-Tqdm
 
-[![PyPi version](https://pypip.in/v/$REPO/badge.png)](https://crate.io/packages/$REPO/)
-[![PyPi downloads](https://pypip.in/d/$REPO/badge.png)](https://crate.io/packages/$REPO/)
-
 Add a [tqdm](https://github.com/tqdm/tqdm) progress bar to your JAX scans and loops.
+
+![PyPI - Version](https://img.shields.io/pypi/v/jax-tqdm)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/jax-tqdm)
 
 ## Installation
 
