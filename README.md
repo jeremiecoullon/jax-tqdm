@@ -2,6 +2,9 @@
 
 Add a [tqdm](https://github.com/tqdm/tqdm) progress bar to your JAX scans and loops.
 
+![PyPI - Version](https://img.shields.io/pypi/v/jax-tqdm)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/jax-tqdm)
+
 ## Installation
 
 Install with pip:
