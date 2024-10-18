@@ -1,1 +1,1 @@
-from jax_tqdm.pbar import PBar, loop_tqdm, scan_tqdm
+from jax_tqdm.pbar import PBar, bounded_while_tqdm, loop_tqdm, scan_tqdm

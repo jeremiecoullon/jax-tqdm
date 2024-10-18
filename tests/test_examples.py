@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from jax_tqdm import PBar, loop_tqdm, scan_tqdm
+from jax_tqdm import PBar, bounded_while_tqdm, loop_tqdm, scan_tqdm
 
 
 @pytest.mark.parametrize("print_rate", [None, 1, 10])
@@ -59,6 +59,23 @@ def test_vmap_w_scan(print_rate):
     assert jnp.array_equal(last_numbers, jnp.full((n_maps,), n))
     assert all_numbers.shape == (n_maps, 10_000)
     assert jnp.array_equal(all_numbers, jnp.tile(1 + jnp.arange(n), (n_maps, 1)))
+
+
+def test_bounded_while_loop():
+    n_total = 10_000
+    n_stop = 5_000
+
+    def cond_fun(x):
+        return x < n_stop
+
+    def body_fun(x):
+        return x + 1
+
+    cond_fun, body_fun = bounded_while_tqdm(cond_fun, body_fun, n_total)
+
+    result = jax.lax.while_loop(cond_fun, body_fun, 0)
+
+    assert result == 5_000
 
 
 @pytest.mark.parametrize("print_rate", [None, 1, 10])

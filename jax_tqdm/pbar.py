@@ -51,7 +51,7 @@ def scan_tqdm(
         """
 
         def wrapper_progress_bar(carry, x):
-            if type(x) is tuple:
+            if isinstance(x, tuple):
                 iter_num, *_ = x
             else:
                 iter_num = x
@@ -62,11 +62,11 @@ def scan_tqdm(
                 carry, x = update_progress_bar((carry, x), iter_num, bar_id=bar_id)
                 result = func(carry, x)
                 result = (PBar(id=bar_id, carry=result[0]), result[1])
-                return close_tqdm(result, iter_num, bar_id=bar_id)
+                return close_tqdm(result, n, iter_num, bar_id=bar_id)
             else:
                 carry, x = update_progress_bar((carry, x), iter_num)
                 result = func(carry, x)
-                return close_tqdm(result, iter_num)
+                return close_tqdm(result, n, iter_num)
 
         return wrapper_progress_bar
 
@@ -115,15 +115,58 @@ def loop_tqdm(
                 i, val = update_progress_bar((i, val), i, bar_id=bar_id)
                 result = func(i, val)
                 result = PBar(id=bar_id, carry=result)
-                return close_tqdm(result, i, bar_id=bar_id)
+                return close_tqdm(result, n, i, bar_id=bar_id)
             else:
                 i, val = update_progress_bar((i, val), i)
                 result = func(i, val)
-                return close_tqdm(result, i)
+                return close_tqdm(result, n, i)
 
         return wrapper_progress_bar
 
     return _loop_tqdm
+
+
+def bounded_while_tqdm(
+    cond_fun: typing.Callable,
+    body_fun: typing.Callable,
+    n: int,
+    print_rate: typing.Optional[int] = None,
+    tqdm_type: str = "auto",
+    **kwargs,
+) -> typing.Tuple[typing.Callable, typing.Callable]:
+
+    update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
+
+    def cond_fun_wrapper(val) -> bool:
+
+        if isinstance(val, tuple):
+            iter_num, *_ = val
+        else:
+            iter_num = val
+
+        cond = cond_fun(val)
+        cond = jax.lax.cond(
+            cond,
+            lambda _cond, *_: _cond,
+            close_tqdm,
+            cond,
+            iter_num,
+            iter_num - 1,
+        )
+        return cond
+
+    def body_fun_wrapper(val):
+        if isinstance(val, tuple):
+            iter_num, val = val
+        else:
+            iter_num = val
+
+        val = update_progress_bar(val, iter_num)
+        val = body_fun(val)
+
+        return val
+
+    return cond_fun_wrapper, body_fun_wrapper
 
 
 def build_tqdm(
@@ -193,9 +236,10 @@ def build_tqdm(
     def _update_tqdm(bar_id: int):
         tqdm_bars[int(bar_id)].update(print_rate)
 
-    def _close_tqdm(bar_id: int):
+    def _close_tqdm(bar_id: int, final_value: int):
         _pbar = tqdm_bars.pop(int(bar_id))
-        _pbar.update(remainder)
+        print(final_value, _pbar.n)
+        _pbar.update(int(final_value) - _pbar.n)
         _pbar.clear()
         _pbar.close()
 
@@ -224,12 +268,12 @@ def build_tqdm(
 
         return carry
 
-    def close_tqdm(result: typing.Any, iter_num: int, bar_id: int = 0):
+    def close_tqdm(result: typing.Any, target: int, iter_num: int, bar_id: int = 0):
         def _inner_close(_result):
-            callback(_close_tqdm, bar_id, ordered=True)
+            callback(_close_tqdm, bar_id, target, ordered=True)
             return _result
 
-        result = jax.lax.cond(iter_num + 1 == n, _inner_close, lambda r: r, result)
+        result = jax.lax.cond(iter_num + 1 == target, _inner_close, lambda r: r, result)
         return result
 
     return update_progress_bar, close_tqdm
