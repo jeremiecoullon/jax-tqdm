@@ -127,46 +127,37 @@ def loop_tqdm(
 
 
 def bounded_while_tqdm(
-    cond_fun: typing.Callable,
-    body_fun: typing.Callable,
     n: int,
     print_rate: typing.Optional[int] = None,
     tqdm_type: str = "auto",
     **kwargs,
-) -> typing.Tuple[typing.Callable, typing.Callable]:
+) -> typing.Callable:
 
     update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
 
-    def cond_fun_wrapper(val) -> bool:
+    def _bounded_while_tqdm(cond_fun) -> typing.Callable:
+        def cond_fun_wrapper(val) -> bool:
 
-        if isinstance(val, tuple):
-            iter_num, *_ = val
-        else:
-            iter_num = val
+            if isinstance(val, tuple):
+                iter_num, *_ = val
+            else:
+                iter_num = val
 
-        cond = cond_fun(val)
-        cond = jax.lax.cond(
-            cond,
-            lambda _cond, *_: _cond,
-            close_tqdm,
-            cond,
-            iter_num,
-            iter_num - 1,
-        )
-        return cond
+            val = update_progress_bar(val, iter_num)
+            cond = cond_fun(val)
+            cond = jax.lax.cond(
+                cond,
+                lambda _cond, *_: _cond,
+                close_tqdm,
+                cond,
+                iter_num,
+                iter_num - 1,
+            )
+            return cond
 
-    def body_fun_wrapper(val):
-        if isinstance(val, tuple):
-            iter_num, val = val
-        else:
-            iter_num = val
+        return cond_fun_wrapper
 
-        val = update_progress_bar(val, iter_num)
-        val = body_fun(val)
-
-        return val
-
-    return cond_fun_wrapper, body_fun_wrapper
+    return _bounded_while_tqdm
 
 
 def build_tqdm(
@@ -221,9 +212,6 @@ def build_tqdm(
                 f"number of steps {n}, got {print_rate}"
             )
 
-    remainder = n % print_rate
-    remainder = remainder if remainder > 0 else print_rate
-
     def _define_tqdm(bar_id: int):
         bar_id = int(bar_id)
         tqdm_bars[bar_id] = pbar(
@@ -238,7 +226,6 @@ def build_tqdm(
 
     def _close_tqdm(bar_id: int, final_value: int):
         _pbar = tqdm_bars.pop(int(bar_id))
-        print(final_value, _pbar.n)
         _pbar.update(int(final_value) - _pbar.n)
         _pbar.clear()
         _pbar.close()
