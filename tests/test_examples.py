@@ -65,14 +65,15 @@ def test_bounded_while_loop():
     n_total = 10_000
     n_stop = 5_000
 
-    @bounded_while_tqdm(n_total)
     def cond_fun(x):
         return x < n_stop
 
     def body_fun(x):
         return x + 1
 
-    result = jax.lax.while_loop(cond_fun, body_fun, 0)
+    cond_fun, body_fun = bounded_while_tqdm(cond_fun, body_fun, n=n_total)
+    init_val = PBar(carry=0)
+    result = jax.lax.while_loop(cond_fun, body_fun, init_val)
 
     assert result == 5_000
 

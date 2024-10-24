@@ -10,8 +10,9 @@ from jax.debug import callback
 
 @chex.dataclass
 class PBar:
-    id: int
     carry: typing.Any
+    id: int = 0
+    iter: int = 0
 
 
 def scan_tqdm(
@@ -127,37 +128,35 @@ def loop_tqdm(
 
 
 def bounded_while_tqdm(
+    cond_fun: typing.Callable,
+    body_fun: typing.Callable,
     n: int,
     print_rate: typing.Optional[int] = None,
     tqdm_type: str = "auto",
     **kwargs,
-) -> typing.Callable:
+) -> typing.Tuple[typing.Callable, typing.Callable]:
 
     update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
 
-    def _bounded_while_tqdm(cond_fun) -> typing.Callable:
-        def cond_fun_wrapper(val) -> bool:
+    def cond_fun_wrapper(val: PBar) -> bool:
+        return cond_fun(val.carry)
 
-            if isinstance(val, tuple):
-                iter_num, *_ = val
-            else:
-                iter_num = val
+    def close_bar(val, iter_num, bar_id):
+        return close_tqdm(val, iter_num, iter_num - 1, bar_id=bar_id)
 
-            val = update_progress_bar(val, iter_num)
-            cond = cond_fun(val)
-            cond = jax.lax.cond(
-                cond,
-                lambda _cond, *_: _cond,
-                close_tqdm,
-                cond,
-                iter_num,
-                iter_num - 1,
-            )
-            return cond
+    def cont(val, _iter_num, _bar_id):
+        return val
 
-        return cond_fun_wrapper
+    def body_fun_wrapper(val: PBar) -> PBar:
+        iter_num = val.iter
+        bar_id = val.id
+        val = val.carry
+        val = update_progress_bar(val, iter_num, bar_id=bar_id)
+        val = body_fun(val)
+        val = jax.lax.cond(cond_fun(val), close_bar, cont, val, iter_num, bar_id)
+        return PBar(carry=val, id=bar_id, iter=iter_num + 1)
 
-    return _bounded_while_tqdm
+    return cond_fun_wrapper, body_fun_wrapper
 
 
 def build_tqdm(
@@ -245,10 +244,12 @@ def build_tqdm(
             )
             return _carry
 
+        cond = iter_num > 0
+
         carry = jax.lax.cond(
-            iter_num == 0,
-            _inner_init,
+            cond,
             _inner_update,
+            _inner_init,
             iter_num,
             carry,
         )
