@@ -22,6 +22,24 @@ def test_readme_scan_example(print_rate):
 
 
 @pytest.mark.parametrize("print_rate", [None, 1, 10])
+def test_readme_scan_w_tuple_example(print_rate):
+    """Just test that README scan example runs correctly"""
+
+    n = 10
+    scan_data = jnp.zeros((n, 200, 100))
+
+    @scan_tqdm(n)
+    def step(carry, x):
+        _, d = x
+        return carry + 1, d
+
+    last_number, output_data = jax.lax.scan(step, 0, (jnp.arange(n), scan_data))
+
+    assert int(last_number) == n
+    assert jnp.allclose(scan_data, output_data)
+
+
+@pytest.mark.parametrize("print_rate", [None, 1, 10])
 def test_readme_fori_loop_example(print_rate):
     """Just test that README loop example runs correctly"""
 
