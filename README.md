@@ -31,6 +31,25 @@ def step(carry, x):
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
 
+Where the range argument must start at 0. A tuple can be used to pass data to the scan,
+as long as the first entry is a range, e.g.:
+
+```python
+from jax_tqdm import scan_tqdm
+from jax import lax
+import jax.numpy as jnp
+
+n = 10
+scan_data = jnp.zeros((n, 200, 100))
+
+@scan_tqdm(n)
+def step(carry, x):
+    _, d = x
+    return carry + 1, d
+
+last_number, output_data = lax.scan(step, 0, (jnp.arange(n), scan_data))
+```
+
 ### In `jax.lax.fori_loop`
 
 ```python
@@ -45,6 +64,8 @@ def step(i, val):
 
 last_number = lax.fori_loop(0, n, step, 0)
 ```
+
+where the initial loop value should start at 0.
 
 ### Scans & Loops Inside Vmap
 
