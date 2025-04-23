@@ -30,3 +30,7 @@ repos:
     rev: "refs/tags/22.3.0:refs/tags/22.3.0"
     hooks:
     -   id: black
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+    -   id: pyupgrade

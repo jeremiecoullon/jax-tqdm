@@ -1,4 +1,4 @@
-import typing
+from typing import Any, Callable, Optional, Tuple, TypeAlias, TypeVar
 
 import chex
 import jax
@@ -7,19 +7,24 @@ import tqdm.notebook
 import tqdm.std
 from jax.debug import callback
 
+Carry = TypeVar("Carry")
+X = TypeVar("X")
+Y = TypeVar("Y")
+R = TypeVar("R")
+
 
 @chex.dataclass
 class PBar:
     id: int
-    carry: typing.Any
+    carry: Any
 
 
 def scan_tqdm(
     n: int,
-    print_rate: typing.Optional[int] = None,
+    print_rate: Optional[int] = None,
     tqdm_type: str = "auto",
-    **kwargs,
-) -> typing.Callable:
+    **kwargs: Any,
+) -> Callable[[Callable[[Carry, X], Y]], Callable[[Carry, X], Y]]:
     """
     tqdm progress bar for a JAX scan
 
@@ -43,14 +48,14 @@ def scan_tqdm(
 
     update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
 
-    def _scan_tqdm(func):
+    def _scan_tqdm(func: Callable[[Carry, X], Y]) -> Callable[[Carry, X], Y]:
         """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
         Note that `body_fun` must either be looping over `jnp.arange(n)`,
         or be looping over a tuple who's first element is `jnp.arange(n)`
         This means that `iter_num` is the current iteration number
         """
 
-        def wrapper_progress_bar(carry, x):
+        def wrapper_progress_bar(carry: Carry, x: X) -> Y:
             if type(x) is tuple:
                 iter_num, *_ = x
             else:
@@ -75,10 +80,10 @@ def scan_tqdm(
 
 def loop_tqdm(
     n: int,
-    print_rate: typing.Optional[int] = None,
+    print_rate: Optional[int] = None,
     tqdm_type: str = "auto",
-    **kwargs,
-) -> typing.Callable:
+    **kwargs: Any,
+) -> Callable[[Callable[[int, X], R]], Callable[[int, X], R]]:
     """
     tqdm progress bar for a JAX fori_loop
 
@@ -102,13 +107,13 @@ def loop_tqdm(
 
     update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
 
-    def _loop_tqdm(func):
+    def _loop_tqdm(func: Callable[[int, X], R]) -> Callable[[int, X], R]:
         """
         Decorator that adds a tqdm progress bar to `body_fun`
         used in `jax.lax.fori_loop`.
         """
 
-        def wrapper_progress_bar(i, val):
+        def wrapper_progress_bar(i: int, val: X) -> R:
             if isinstance(val, PBar):
                 bar_id = val.id
                 val = val.carry
@@ -128,10 +133,10 @@ def loop_tqdm(
 
 def build_tqdm(
     n: int,
-    print_rate: typing.Optional[int],
+    print_rate: Optional[int],
     tqdm_type: str,
-    **kwargs,
-) -> typing.Tuple[typing.Callable, typing.Callable]:
+    **kwargs: Any,
+) -> Tuple[Callable, Callable]:
     """
     Build the tqdm progress bar on the host
 
@@ -181,7 +186,7 @@ def build_tqdm(
     remainder = n % print_rate
     remainder = remainder if remainder > 0 else print_rate
 
-    def _define_tqdm(bar_id: int):
+    def _define_tqdm(bar_id: int) -> None:
         bar_id = int(bar_id)
         tqdm_bars[bar_id] = pbar(
             total=n,
@@ -190,23 +195,23 @@ def build_tqdm(
             **kwargs,
         )
 
-    def _update_tqdm(bar_id: int):
+    def _update_tqdm(bar_id: int) -> None:
         tqdm_bars[int(bar_id)].update(print_rate)
 
-    def _close_tqdm(bar_id: int):
+    def _close_tqdm(bar_id: int) -> None:
         _pbar = tqdm_bars.pop(int(bar_id))
         _pbar.update(remainder)
         _pbar.clear()
         _pbar.close()
 
-    def update_progress_bar(carry: typing.Any, iter_num: int, bar_id: int = 0):
+    def update_progress_bar(carry: Carry, iter_num: int, bar_id: int = 0) -> Carry:
         """Updates tqdm from a JAX scan or loop"""
 
-        def _inner_init(_i, _carry):
+        def _inner_init(_i: int, _carry: Carry) -> Carry:
             callback(_define_tqdm, bar_id, ordered=True)
             return _carry
 
-        def _inner_update(i, _carry):
+        def _inner_update(i: int, _carry: Carry) -> Carry:
             _ = jax.lax.cond(
                 i % print_rate == 0,
                 lambda: callback(_update_tqdm, bar_id, ordered=True),
@@ -224,8 +229,8 @@ def build_tqdm(
 
         return carry
 
-    def close_tqdm(result: typing.Any, iter_num: int, bar_id: int = 0):
-        def _inner_close(_result):
+    def close_tqdm(result: R, iter_num: int, bar_id: int = 0) -> R:
+        def _inner_close(_result: R) -> R:
             callback(_close_tqdm, bar_id, ordered=True)
             return _result
 
