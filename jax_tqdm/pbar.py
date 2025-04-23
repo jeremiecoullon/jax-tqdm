@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional, Tuple, TypeAlias, TypeVar
+from dataclasses import replace
+from typing import Any, Callable, Generic, Optional, Tuple, TypeVar
 
 import chex
 import jax
@@ -14,9 +15,9 @@ R = TypeVar("R")
 
 
 @chex.dataclass
-class PBar:
+class PBar(Generic[Carry]):
     id: int
-    carry: Any
+    carry: Carry
 
 
 def scan_tqdm(
@@ -48,14 +49,16 @@ def scan_tqdm(
 
     update_progress_bar, close_tqdm = build_tqdm(n, print_rate, tqdm_type, **kwargs)
 
-    def _scan_tqdm(func: Callable[[Carry, X], Y]) -> Callable[[Carry, X], Y]:
+    def _scan_tqdm(
+        func: Callable[[Carry, X], Tuple[Carry, Y]],
+    ) -> Callable[[Carry, X], Tuple[Carry, Y]]:
         """Decorator that adds a tqdm progress bar to `body_fun` used in `jax.lax.scan`.
         Note that `body_fun` must either be looping over `jnp.arange(n)`,
         or be looping over a tuple who's first element is `jnp.arange(n)`
         This means that `iter_num` is the current iteration number
         """
 
-        def wrapper_progress_bar(carry: Carry, x: X) -> Y:
+        def wrapper_progress_bar(carry: Carry, x: X) -> Tuple[Carry, Y]:
             if type(x) is tuple:
                 iter_num, *_ = x
             else:
@@ -63,15 +66,15 @@ def scan_tqdm(
 
             if isinstance(carry, PBar):
                 bar_id = carry.id
-                carry = carry.carry
-                carry, x = update_progress_bar((carry, x), iter_num, bar_id=bar_id)
-                result = func(carry, x)
-                result = (PBar(id=bar_id, carry=result[0]), result[1])
-                return close_tqdm(result, iter_num, bar_id=bar_id)
+                carry_ = carry.carry
+                carry_, x = update_progress_bar((carry_, x), iter_num, bar_id=bar_id)
+                result = func(carry_, x)
+                result = (replace(carry_, id=bar_id, carry=result[0]), result[1])
+                return close_tqdm(result, iter_num, bar_id)
             else:
                 carry, x = update_progress_bar((carry, x), iter_num)
                 result = func(carry, x)
-                return close_tqdm(result, iter_num)
+                return close_tqdm(result, iter_num, 0)
 
         return wrapper_progress_bar
 
@@ -120,11 +123,11 @@ def loop_tqdm(
                 i, val = update_progress_bar((i, val), i, bar_id=bar_id)
                 result = func(i, val)
                 result = PBar(id=bar_id, carry=result)
-                return close_tqdm(result, i, bar_id=bar_id)
+                return close_tqdm(result, i, bar_id)
             else:
                 i, val = update_progress_bar((i, val), i)
                 result = func(i, val)
-                return close_tqdm(result, i)
+                return close_tqdm(result, i, 0)
 
         return wrapper_progress_bar
 
@@ -136,7 +139,7 @@ def build_tqdm(
     print_rate: Optional[int],
     tqdm_type: str,
     **kwargs: Any,
-) -> Tuple[Callable, Callable]:
+) -> Tuple[Callable, Callable[[R, int, int], R]]:
     """
     Build the tqdm progress bar on the host
 
