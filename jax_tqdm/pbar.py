@@ -1,7 +1,6 @@
 from dataclasses import replace
 from typing import Any, Callable, Generic, Optional, Tuple, TypeVar
 
-import chex
 import jax
 import tqdm.auto
 import tqdm.notebook
@@ -132,6 +131,16 @@ def loop_tqdm(
         return wrapper_progress_bar
 
     return _loop_tqdm
+
+
+class UpdateProgressBar(Protocol):
+    def __call__(self, carry: Carry, iter_num: int, bar_id: int = 0) -> Carry:
+        ...
+
+
+class CloseTQDM(Protocol):
+    def __call__(self, result: R, iter_num: int, bar_id: int = 0) -> R:
+        ...
 
 
 def build_tqdm(
