@@ -24,6 +24,8 @@ chex = "^0.1.87"
 pre-commit = "^2.21.0"
 taskipy = "^1.10.3"
 pytest = "^7.2.1"
+mypy = "^1.15.0"
+types-tqdm = "^4.67.0.20250417"
 
 [build-system]
 requires = ["poetry-core>=1.2.0"]

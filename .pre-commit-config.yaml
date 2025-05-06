@@ -34,7 +34,11 @@ repos:
     rev: v3.3.1
     hooks:
     -   id: pyupgrade
--   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+-   repo: local
     hooks:
-    -   id: mypy
+      - id: mypy
+        name: "Static type checker"
+        entry: python -m mypy jax_tqdm/
+        language: system
+        types: [ python ]
+        pass_filenames: false
