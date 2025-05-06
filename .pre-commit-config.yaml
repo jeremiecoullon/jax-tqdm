@@ -30,3 +30,15 @@ repos:
     rev: "refs/tags/22.3.0:refs/tags/22.3.0"
     hooks:
     -   id: black
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+    -   id: pyupgrade
+-   repo: local
+    hooks:
+      - id: mypy
+        name: "Static type checker"
+        entry: python -m mypy jax_tqdm/
+        language: system
+        types: [ python ]
+        pass_filenames: false
