@@ -12,6 +12,13 @@ homepage = "https://github.com/jeremiecoullon/jax-tqdm"
 repository = "https://github.com/jeremiecoullon/jax-tqdm"
 keywords = ["jax", "tqdm"]
 license = "MIT"
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
