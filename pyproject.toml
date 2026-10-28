@@ -1,42 +1,53 @@
-[tool.poetry]
+[project]
 name = "jax-tqdm"
 version = "0.4.0"
 description = "Tqdm progress bar for JAX scans and loops"
-authors = [
-    "Jeremie Coullon <jeremie.coullon@gmail.com>",
-    "zombie-einstein <zombie-einstein@proton.me>"
-]
 readme = "README.md"
-packages = [{include = "jax_tqdm"}]
-homepage = "https://github.com/jeremiecoullon/jax-tqdm"
-repository = "https://github.com/jeremiecoullon/jax-tqdm"
+authors = [
+    { name = "Jeremie Coullon", email = "jeremie.coullon@gmail.com" },
+    { name = "zombie-einstein", email = "zombie-einstein@proton.me" }
+]
+maintainers = [
+    { name = "zombie-einstein", email = "zombie-einstein@proton.me" }
+]
 keywords = ["jax", "tqdm"]
 license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "chex>=0.1.90",
+    "jax>=0.4.12",
+    "tqdm>=4.70.1",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-tqdm = "^4.64.1"
-jax = ">=0.4.12"
-chex = "^0.1.87"
+[project.urls]
+homepage = "https://github.com/jeremiecoullon/jax-tqdm"
+repository = "https://github.com/jeremiecoullon/jax-tqdm"
+issues = "https://github.com/jeremiecoullon/jax-tqdm/issues"
 
-
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^2.21.0"
-taskipy = "^1.10.3"
-pytest = "^7.2.1"
-mypy = "^1.15.0"
-types-tqdm = "^4.67.0.20250417"
+[project.scripts]
+jax-tqdm = "jax_tqdm:main"
 
 [build-system]
-requires = ["poetry-core>=1.2.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pre-commit>=4.6.2",
+    "pytest>=9.2.0",
+    "taskipy>=1.14.1",
+    "types-tqdm>=4.70.0.20260906",
+]
 
 [tool.taskipy.tasks]
 test = { cmd = "pytest", help="Run tests"}

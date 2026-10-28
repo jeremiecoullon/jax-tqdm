@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import jax
 import tqdm.auto
@@ -27,7 +28,7 @@ class PBar(Generic[C]):
 
 def build_tqdm(
     n: int,
-    print_rate: Optional[int],
+    print_rate: int | None,
     tqdm_type: str,
     **kwargs: Any,
 ) -> tuple[UpdateProgressBar, CloseTQDM]:
@@ -61,7 +62,7 @@ def build_tqdm(
     for kwarg in ("total", "mininterval", "maxinterval", "miniters"):
         kwargs.pop(kwarg, None)
 
-    tqdm_bars = dict()
+    tqdm_bars = {}
 
     if print_rate is None:
         if n > 20:

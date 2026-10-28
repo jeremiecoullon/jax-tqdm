@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from .base import PBar, build_tqdm
 
@@ -13,7 +14,7 @@ WrappedScanFn = ScanFn | Callable[[PBar[C], X], tuple[PBar[C], Y]]
 
 def scan_tqdm(
     n: int,
-    print_rate: Optional[int] = None,
+    print_rate: int | None = None,
     tqdm_type: str = "auto",
     **kwargs: Any,
 ) -> Callable[[ScanFn], WrappedScanFn]:
