@@ -192,24 +192,14 @@ The code is explained in more detail in this [blog post](https://www.jeremiecoul
 
 ## Developers
 
-Dependencies can be installed with [poetry](https://python-poetry.org/) by running
-
-```bash
-poetry install
-```
+Dependencies are managed using [uv](https://docs.astral.sh/uv/).
 
 ### Pre-Commit Hooks
-
-Pre commit hooks can be installed by running
-
-```bash
-pre-commit install
-```
 
 Pre-commit checks can then be run using
 
 ```bash
-task lint
+uv run task lint
 ```
 
 ### Tests
@@ -217,5 +207,5 @@ task lint
 Tests can be run with
 
 ```bash
-task test
+uv run task test
 ```
