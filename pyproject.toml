@@ -1,6 +1,6 @@
 [project]
 name = "jax-tqdm"
-version = "0.4.0"
+version = "0.4.1"
 description = "Tqdm progress bar for JAX scans and loops"
 readme = "README.md"
 authors = [
@@ -32,9 +32,6 @@ dependencies = [
 homepage = "https://github.com/jeremiecoullon/jax-tqdm"
 repository = "https://github.com/jeremiecoullon/jax-tqdm"
 issues = "https://github.com/jeremiecoullon/jax-tqdm/issues"
-
-[project.scripts]
-jax-tqdm = "jax_tqdm:main"
 
 [build-system]
 requires = ["uv_build>=0.13.6,<0.14.0"]
