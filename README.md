@@ -24,9 +24,11 @@ import jax.numpy as jnp
 
 n = 10_000
 
+
 @scan_tqdm(n)
 def step(carry, x):
     return carry + 1, carry + 1
+
 
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
@@ -42,10 +44,12 @@ import jax.numpy as jnp
 n = 10
 scan_data = jnp.zeros((n, 200, 100))
 
+
 @scan_tqdm(n)
 def step(carry, x):
     _, d = x
     return carry + 1, d
+
 
 last_number, output_data = lax.scan(step, 0, (jnp.arange(n), scan_data))
 ```
@@ -58,9 +62,11 @@ from jax import lax
 
 n = 10_000
 
+
 @loop_tqdm(n)
 def step(i, val):
     return val + 1
+
 
 last_number = lax.fori_loop(0, n, step, 0)
 ```
@@ -80,21 +86,22 @@ import jax
 
 n = 10_000
 
+
 @scan_tqdm(n)
 def step(carry, _):
     return carry + 1, carry + 1
+
 
 def map_func(i):
     # Wrap the initial value and pass the
     # progress bar index
     init = PBar(id=i, carry=0)
-    final_value, _all_numbers = jax.lax.scan(
-        step, init, jax.numpy.arange(n)
-    )
+    final_value, _all_numbers = jax.lax.scan(step, init, jax.numpy.arange(n))
     return (
         final_value.carry,
         _all_numbers,
     )
+
 
 last_numbers, all_numbers = jax.vmap(map_func)(jax.numpy.arange(10))
 ```
@@ -116,9 +123,11 @@ import jax.numpy as jnp
 
 n = 10_000
 
+
 @scan_tqdm(n, print_rate=2)
 def step(carry, x):
     return carry + 1, carry + 1
+
 
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
@@ -135,9 +144,11 @@ import jax.numpy as jnp
 
 n = 10_000
 
-@scan_tqdm(n, print_rate=1, tqdm_type='std') # tqdm_type='std' or 'notebook' or 'auto'
+
+@scan_tqdm(n, print_rate=1, tqdm_type="std")  # tqdm_type='std' or 'notebook' or 'auto'
 def step(carry, x):
     return carry + 1, carry + 1
+
 
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
@@ -154,9 +165,11 @@ import jax.numpy as jnp
 
 n = 10_000
 
-@scan_tqdm(n, print_rate=1, desc='progress bar', position=0, leave=False)
+
+@scan_tqdm(n, print_rate=1, desc="progress bar", position=0, leave=False)
 def step(carry, x):
     return carry + 1, carry + 1
+
 
 last_number, all_numbers = lax.scan(step, 0, jnp.arange(n))
 ```
@@ -179,24 +192,14 @@ The code is explained in more detail in this [blog post](https://www.jeremiecoul
 
 ## Developers
 
-Dependencies can be installed with [poetry](https://python-poetry.org/) by running
-
-```bash
-poetry install
-```
+Dependencies are managed using [uv](https://docs.astral.sh/uv/).
 
 ### Pre-Commit Hooks
-
-Pre commit hooks can be installed by running
-
-```bash
-pre-commit install
-```
 
 Pre-commit checks can then be run using
 
 ```bash
-task lint
+uv run task lint
 ```
 
 ### Tests
@@ -204,5 +207,5 @@ task lint
 Tests can be run with
 
 ```bash
-task test
+uv run task test
 ```
